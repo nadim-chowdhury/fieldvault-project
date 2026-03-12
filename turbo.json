@@ -1,0 +1,89 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "ui": "tui",
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**", "web-build/**"]
+    },
+
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+
+    "start": {
+      "dependsOn": ["build"],
+      "cache": false,
+      "persistent": true
+    },
+
+    "lint": {
+      "dependsOn": ["^lint"],
+      "outputs": []
+    },
+
+    "lint:fix": {
+      "cache": false,
+      "outputs": []
+    },
+
+    "type-check": {
+      "dependsOn": ["^build"],
+      "outputs": []
+    },
+
+    "test": {
+      "dependsOn": ["^build"],
+      "inputs": ["src/**", "test/**", "*.config.*"],
+      "outputs": ["coverage/**"]
+    },
+
+    "test:e2e": {
+      "dependsOn": ["build"],
+      "cache": false,
+      "outputs": ["playwright-report/**", "test-results/**"]
+    },
+
+    "clean": {
+      "cache": false,
+      "outputs": []
+    },
+
+    "migration:run": {
+      "cache": false,
+      "outputs": []
+    },
+
+    "migration:revert": {
+      "cache": false,
+      "outputs": []
+    },
+
+    "migration:generate": {
+      "cache": false,
+      "outputs": ["src/database/migrations/**"]
+    },
+
+    "db:seed": {
+      "cache": false,
+      "outputs": []
+    }
+  },
+  "globalEnv": ["NODE_ENV", "CI", "VERCEL", "RAILWAY_ENVIRONMENT"],
+  "globalPassThroughEnv": [
+    "DATABASE_URL",
+    "REDIS_URL",
+    "JWT_ACCESS_SECRET",
+    "JWT_REFRESH_SECRET",
+    "CLOUDINARY_CLOUD_NAME",
+    "CLOUDINARY_API_KEY",
+    "CLOUDINARY_API_SECRET",
+    "SENDGRID_API_KEY",
+    "NEXT_PUBLIC_API_URL",
+    "NEXT_PUBLIC_APP_URL",
+    "EXPO_PUBLIC_API_URL",
+    "EXPO_PUBLIC_APP_URL"
+  ]
+}

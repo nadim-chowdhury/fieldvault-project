@@ -1,0 +1,279 @@
+name: API — Build, Test & Deploy
+
+on:
+  push:
+    branches:
+      - main
+      - staging
+    paths:
+      - "apps/api/**"
+      - "packages/**"
+      - ".github/workflows/api.yml"
+  pull_request:
+    branches:
+      - main
+      - staging
+    paths:
+      - "apps/api/**"
+      - "packages/**"
+
+env:
+  NODE_VERSION: "20"
+  PNPM_VERSION: "9"
+
+jobs:
+  # ─────────────────────────────────────────────
+  # JOB 1: Lint & Type Check
+  # ─────────────────────────────────────────────
+  lint:
+    name: Lint & Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm --filter api lint
+
+      - name: Type check
+        run: pnpm --filter api type-check
+
+  # ─────────────────────────────────────────────
+  # JOB 2: Unit & Integration Tests
+  # ─────────────────────────────────────────────
+  test:
+    name: Unit & Integration Tests
+    runs-on: ubuntu-latest
+    needs: lint
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: fieldvault
+          POSTGRES_PASSWORD: testpassword
+          POSTGRES_DB: fieldvault_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://fieldvault:testpassword@localhost:5432/fieldvault_test
+      REDIS_URL: redis://localhost:6379
+      JWT_ACCESS_SECRET: test-access-secret-min-32-characters-long
+      JWT_REFRESH_SECRET: test-refresh-secret-min-32-characters-long
+      APP_URL: http://localhost:3001
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run migrations
+        working-directory: apps/api
+        run: pnpm migration:run
+
+      - name: Run unit tests
+        run: pnpm --filter api test
+
+      - name: Upload coverage report
+        uses: codecov/codecov-action@v4
+        if: always()
+        with:
+          directory: apps/api/coverage
+          flags: api
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+  # ─────────────────────────────────────────────
+  # JOB 3: E2E Tests
+  # ─────────────────────────────────────────────
+  e2e:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    needs: test
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: fieldvault
+          POSTGRES_PASSWORD: testpassword
+          POSTGRES_DB: fieldvault_e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://fieldvault:testpassword@localhost:5432/fieldvault_e2e
+      REDIS_URL: redis://localhost:6379
+      JWT_ACCESS_SECRET: test-access-secret-min-32-characters-long
+      JWT_REFRESH_SECRET: test-refresh-secret-min-32-characters-long
+      APP_URL: http://localhost:3001
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build API
+        run: pnpm --filter api build
+
+      - name: Run migrations
+        working-directory: apps/api
+        run: pnpm migration:run
+
+      - name: Run E2E tests
+        run: pnpm --filter api test:e2e
+
+  # ─────────────────────────────────────────────
+  # JOB 4: Build (verify production build)
+  # ─────────────────────────────────────────────
+  build:
+    name: Production Build
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm --filter api build
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-build
+          path: apps/api/dist
+          retention-days: 1
+
+  # ─────────────────────────────────────────────
+  # JOB 5: Deploy to Railway (main branch only)
+  # ─────────────────────────────────────────────
+  deploy:
+    name: Deploy to Railway
+    runs-on: ubuntu-latest
+    needs: [build, e2e]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    environment:
+      name: production
+      url: https://api.fieldvault.io
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Deploy to Railway
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          railway up \
+            --service fieldvault-api \
+            --environment production \
+            --detach
+
+      - name: Wait for deployment health check
+        run: |
+          echo "Waiting for API to be healthy..."
+          for i in {1..12}; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://api.fieldvault.io/api/health)
+            if [ "$STATUS" = "200" ]; then
+              echo "✅ API is healthy (status $STATUS)"
+              exit 0
+            fi
+            echo "Attempt $i: status $STATUS — retrying in 10s..."
+            sleep 10
+          done
+          echo "❌ Health check failed after 2 minutes"
+          exit 1
+
+      - name: Notify deployment success
+        if: success()
+        run: echo "🚀 API deployed successfully to production"
+
+      - name: Notify deployment failure
+        if: failure()
+        run: echo "❌ API deployment failed"

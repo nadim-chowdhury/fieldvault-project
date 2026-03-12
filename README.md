@@ -21,9 +21,9 @@ FieldVault fixes all three with QR code tracking, automated maintenance alerts, 
 ## Monorepo Structure
 
 ```
-fieldvault/
+fieldvault-project/
 ├── apps/
-│   ├── web/              # Next.js 14 — Office manager dashboard
+│   ├── web/              # Next.js 16 — Office manager dashboard
 │   ├── api/              # NestJS — REST API backend
 │   └── mobile/           # React Native / Expo — Field worker app
 │
@@ -56,7 +56,7 @@ fieldvault/
 
 | Layer        | Technology               |
 | ------------ | ------------------------ |
-| Framework    | Next.js 14 (App Router)  |
+| Framework    | Next.js 16 (App Router)  |
 | Language     | TypeScript 5             |
 | Styling      | Tailwind CSS + shadcn/ui |
 | Server State | TanStack Query v5        |
@@ -71,9 +71,9 @@ fieldvault/
 
 | Layer         | Technology                    |
 | ------------- | ----------------------------- |
-| Framework     | NestJS 10                     |
+| Framework     | NestJS 11                     |
 | Language      | TypeScript 5                  |
-| Database      | PostgreSQL 16 (Neon)          |
+| Database      | PostgreSQL 17 (Neon)          |
 | ORM           | TypeORM                       |
 | Cache / Queue | Redis (Upstash) + BullMQ      |
 | Auth          | JWT (access + refresh tokens) |
@@ -86,9 +86,9 @@ fieldvault/
 
 | Layer        | Technology                      |
 | ------------ | ------------------------------- |
-| Framework    | React Native 0.74 + Expo SDK 51 |
+| Framework    | React Native 0.74 + Expo SDK 55 |
 | Language     | TypeScript 5                    |
-| Navigation   | Expo Router v3                  |
+| Navigation   | Expo Router v6                  |
 | Storage      | MMKV + expo-secure-store        |
 | Server State | TanStack Query v5               |
 | Client State | Zustand                         |
@@ -133,16 +133,15 @@ Full system design documents are in `/docs`:
 ### Prerequisites
 
 - Node.js 20+
-- pnpm 9+ (`npm install -g pnpm`)
 - Docker (for local PostgreSQL + Redis)
 - Expo CLI (`npm install -g expo-cli`)
 
 ### 1. Clone & Install
 
 ```bash
-git clone https://github.com/nadim-chowdhury/fieldvault.git
+git clone https://github.com/nadim-chowdhury/fieldvault-project.git
 cd fieldvault
-pnpm install
+npm install
 ```
 
 ### 2. Environment Setup
@@ -170,29 +169,29 @@ docker compose ps
 
 ```bash
 cd apps/api
-pnpm run migration:run   # Creates all tables
-pnpm run seed            # (Optional) Seeds demo data
+npm run migration:run   # Creates all tables
+npm run seed            # (Optional) Seeds demo data
 ```
 
 ### 5. Run All Apps
 
 ```bash
 # From the root — runs all three apps in parallel
-pnpm dev
+npm dev
 ```
 
 Or run individually:
 
 ```bash
 # Web dashboard  → http://localhost:3000
-cd apps/web && pnpm dev
+cd apps/web && npm dev
 
 # Backend API    → http://localhost:3001
 # Swagger docs   → http://localhost:3001/api/docs
-cd apps/api && pnpm dev
+cd apps/api && npm dev
 
 # Mobile app     → Expo Go or simulator
-cd apps/mobile && pnpm start
+cd apps/mobile && npm start
 ```
 
 ---
