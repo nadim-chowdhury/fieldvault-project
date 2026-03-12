@@ -20,6 +20,10 @@ import { UsersModule } from './modules/users/users.module';
 import { AssetsModule } from './modules/assets/assets.module';
 import { AssignmentsModule } from './modules/assignments/assignments.module';
 import { MaintenanceModule } from './modules/maintenance/maintenance.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { ReportsModule } from './modules/reports/reports.module';
+import { UploadsModule } from './modules/uploads/uploads.module';
 
 @Module({
   imports: [
@@ -75,6 +79,10 @@ import { MaintenanceModule } from './modules/maintenance/maintenance.module';
     AssetsModule,
     AssignmentsModule,
     MaintenanceModule,
+    NotificationsModule,
+    DashboardModule,
+    ReportsModule,
+    UploadsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

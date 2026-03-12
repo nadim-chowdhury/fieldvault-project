@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { Providers } from "./providers";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -10,30 +11,22 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: "FieldVault — Asset Intelligence for Construction Teams",
+    default: "FieldVault — Asset Management",
     template: "%s | FieldVault",
   },
   description:
-    "Audit-ready asset management for small construction firms. Track equipment, manage maintenance, and generate compliance reports.",
-  keywords: [
-    "asset management",
-    "construction",
-    "equipment tracking",
-    "QR code",
-    "maintenance",
-    "audit",
-    "compliance",
-  ],
+    "Audit-ready asset management for construction firms. Track tools, schedule maintenance, pass inspections.",
+  keywords: ["asset management", "construction", "equipment tracking", "maintenance", "audit"],
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} antialiased`}>{children}</body>
+      <body className={`${inter.variable} antialiased`}>
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 }
