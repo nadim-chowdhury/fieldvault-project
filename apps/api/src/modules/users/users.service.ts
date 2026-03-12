@@ -4,20 +4,43 @@ import { Repository } from 'typeorm';
 import bcrypt from 'bcrypt';
 import { User } from './entities/user.entity';
 import { InviteUserDto, UpdateUserDto } from './dto/user.dto';
+import { EmailService } from '../auth/services/email.service';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
     private readonly usersRepo: Repository<User>,
+    private readonly emailService: EmailService,
   ) {}
 
-  async findAllByCompany(companyId: string): Promise<User[]> {
-    return this.usersRepo.find({
+  async findAllByCompany(
+    companyId: string,
+    options?: { page?: number; limit?: number },
+  ) {
+    const page = Math.max(1, Number(options?.page) || 1);
+    const limit = Math.min(100, Math.max(1, Number(options?.limit) || 20));
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await this.usersRepo.findAndCount({
       where: { companyId },
       order: { createdAt: 'DESC' },
       select: ['id', 'name', 'email', 'role', 'isActive', 'lastLoginAt', 'createdAt'],
+      skip,
+      take: limit,
     });
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+        hasNextPage: page < Math.ceil(total / limit),
+        hasPreviousPage: page > 1,
+      },
+    };
   }
 
   async findOne(id: string, companyId: string): Promise<User> {
@@ -45,7 +68,18 @@ export class UsersService {
     });
     const saved = await this.usersRepo.save(user);
 
-    // TODO: Send invitation email with temp password via notification service
+    // Send invitation email with temp password
+    try {
+      const company = await this.usersRepo
+        .createQueryBuilder('u')
+        .leftJoinAndSelect('u.company', 'c')
+        .where('u.id = :id', { id: invitedById })
+        .getOne();
+      const companyName = company?.company?.name || 'FieldVault';
+      await this.emailService.sendInvitationEmail(dto.email, companyName, tempPassword);
+    } catch {
+      // Log but don't fail the invitation if email fails
+    }
 
     const { passwordHash: _, refreshTokenHash: __, ...result } = saved;
     return result as User;
@@ -62,3 +96,4 @@ export class UsersService {
     await this.usersRepo.remove(user);
   }
 }
+

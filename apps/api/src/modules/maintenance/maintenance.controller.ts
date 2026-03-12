@@ -1,5 +1,5 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { Controller, Get, Post, Patch, Delete, Param, Body, Query, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { MaintenanceService } from './maintenance.service';
 import { CreateMaintenanceDto, UpdateMaintenanceDto } from './dto/maintenance.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -17,9 +17,15 @@ export class MaintenanceController {
 
   @Get()
   @Roles(UserRole.ADMIN, UserRole.SUPERVISOR)
-  @ApiOperation({ summary: 'List all maintenance logs' })
-  async findAll(@CurrentUser() user: User) {
-    return this.maintenanceService.findAll(user.companyId);
+  @ApiOperation({ summary: 'List all maintenance logs (paginated)' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  async findAll(
+    @CurrentUser() user: User,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) {
+    return this.maintenanceService.findAll(user.companyId, { page, limit });
   }
 
   @Get('overdue')

@@ -6,6 +6,7 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { Asset } from '../../assets/entities/asset.entity';
 
@@ -26,6 +27,8 @@ export enum MaintenanceStatus {
 }
 
 @Entity('maintenance_logs')
+@Index(['companyId'])
+@Index(['companyId', 'scheduledDate'])
 export class MaintenanceLog {
   @PrimaryGeneratedColumn('uuid')
   id: string;

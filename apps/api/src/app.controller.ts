@@ -8,9 +8,9 @@ export class AppController {
   constructor(private readonly appService: AppService) {}
 
   @Get('health')
-  @ApiOperation({ summary: 'Health check endpoint' })
+  @ApiOperation({ summary: 'Health check endpoint — verifies DB connectivity' })
   @ApiOkResponse({ description: 'API is healthy' })
-  getHealth() {
+  async getHealth() {
     return this.appService.getHealth();
   }
 }

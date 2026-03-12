@@ -7,6 +7,7 @@ import {
   ManyToOne,
   OneToMany,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { Company } from '../../companies/entities/company.entity';
 import { Assignment } from '../../assignments/entities/assignment.entity';
@@ -29,6 +30,8 @@ export enum AssetCategory {
 }
 
 @Entity('assets')
+@Index(['companyId'])
+@Index(['companyId', 'status'])
 export class Asset {
   @PrimaryGeneratedColumn('uuid')
   id: string;

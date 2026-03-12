@@ -6,11 +6,14 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { Asset } from '../../assets/entities/asset.entity';
 import { User } from '../../users/entities/user.entity';
 
 @Entity('assignments')
+@Index(['companyId'])
+@Index(['companyId', 'checkedInAt'])
 export class Assignment {
   @PrimaryGeneratedColumn('uuid')
   id: string;

@@ -14,12 +14,30 @@ export class MaintenanceService {
     private readonly assetsRepo: Repository<Asset>,
   ) {}
 
-  async findAll(companyId: string): Promise<MaintenanceLog[]> {
-    return this.maintenanceRepo.find({
+  async findAll(companyId: string, options?: { page?: number; limit?: number }) {
+    const page = Math.max(1, Number(options?.page) || 1);
+    const limit = Math.min(100, Math.max(1, Number(options?.limit) || 20));
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await this.maintenanceRepo.findAndCount({
       where: { companyId },
       relations: ['asset'],
       order: { scheduledDate: 'ASC' },
+      skip,
+      take: limit,
     });
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+        hasNextPage: page < Math.ceil(total / limit),
+        hasPreviousPage: page > 1,
+      },
+    };
   }
 
   async findOverdue(companyId: string): Promise<MaintenanceLog[]> {

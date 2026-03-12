@@ -6,9 +6,11 @@ import compression from 'compression';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { ResponseTransformInterceptor } from './common/interceptors/response-transform.interceptor';
+import { WinstonLoggerService } from './common/logger/winston-logger.service';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const winstonLogger = new WinstonLoggerService();
+  const app = await NestFactory.create(AppModule, { logger: winstonLogger });
   const logger = new Logger('Bootstrap');
 
   // ─── Security ───────────────────────────────────────

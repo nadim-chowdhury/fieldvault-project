@@ -24,7 +24,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { UploadsModule } from './modules/uploads/uploads.module';
-
+import { LoggerModule } from './common/logger/logger.module';
 @Module({
   imports: [
     // ─── Config (validated at startup) ────────────────
@@ -83,6 +83,7 @@ import { UploadsModule } from './modules/uploads/uploads.module';
     DashboardModule,
     ReportsModule,
     UploadsModule,
+    LoggerModule,
   ],
   controllers: [AppController],
   providers: [AppService],
