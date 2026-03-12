@@ -1,11 +1,12 @@
 {
   "name": "api",
-  "version": "0.0.1",
-  "description": "",
-  "author": "",
+  "version": "1.0.0",
+  "description": "FieldVault — NestJS REST API Backend",
+  "author": "Nadim Chowdhury <nadim-chowdhury@outlook.com>",
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
+    "dev": "nest start --watch",
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
@@ -39,6 +40,7 @@
     "cloudinary": "^2.9.0",
     "compression": "^1.8.1",
     "helmet": "^8.1.0",
+    "joi": "^17.13.0",
     "ioredis": "^5.10.0",
     "nest-winston": "^1.10.2",
     "nodemailer": "^8.0.2",

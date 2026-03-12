@@ -1,17 +1,23 @@
 {
   "expo": {
-    "name": "mobile",
-    "slug": "mobile",
+    "name": "FieldVault",
+    "slug": "fieldvault",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "mobile",
+    "scheme": "fieldvault",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": false,
+      "bundleIdentifier": "io.fieldvault.mobile",
+      "infoPlist": {
+        "NSCameraUsageDescription": "FieldVault needs camera access to scan QR codes on equipment.",
+        "NSPhotoLibraryUsageDescription": "FieldVault needs photo access to attach images to damage reports."
+      }
     },
     "android": {
+      "package": "io.fieldvault.mobile",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -19,7 +25,11 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "permissions": [
+        "CAMERA",
+        "VIBRATE",
+        "RECEIVE_BOOT_COMPLETED"
+      ]
     },
     "web": {
       "output": "static",
@@ -27,6 +37,26 @@
     },
     "plugins": [
       "expo-router",
+      "expo-secure-store",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "FieldVault needs camera access to scan QR codes on equipment."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "FieldVault needs photo access to attach images to damage reports."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/notification-icon.png",
+          "color": "#F97316"
+        }
+      ],
       [
         "expo-splash-screen",
         {
@@ -35,7 +65,7 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff",
           "dark": {
-            "backgroundColor": "#000000"
+            "backgroundColor": "#0a0a0a"
           }
         }
       ]

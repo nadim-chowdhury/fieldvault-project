@@ -86,7 +86,7 @@ fieldvault-project/
 
 | Layer        | Technology                      |
 | ------------ | ------------------------------- |
-| Framework    | React Native 0.74 + Expo SDK 55 |
+| Framework    | React Native 0.81 + Expo SDK 54 |
 | Language     | TypeScript 5                    |
 | Navigation   | Expo Router v6                  |
 | Storage      | MMKV + expo-secure-store        |

@@ -33,10 +33,6 @@
     "build:api": "turbo run build --filter=api",
     "prepare": "husky"
   },
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
   "devDependencies": {
     "turbo": "^2.0.0",
     "prettier": "^3.3.0",

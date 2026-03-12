@@ -2,7 +2,7 @@
 
 > **Project Name:** FieldVault
 > **Tagline:** Audit-Ready Asset Intelligence for Construction Teams
-> **Stack:** React Native · Expo SDK 51 · TypeScript · Expo Router · MMKV · TanStack Query
+> **Stack:** React Native · Expo SDK 54 · TypeScript · Expo Router · MMKV · TanStack Query
 > **Author:** Nadim Chowdhury | nadim-chowdhury@outlook.com
 > **Version:** 1.0.0 | Phase 1 — Mobile App (iOS & Android)
 
@@ -66,9 +66,9 @@ The FieldVault mobile app is the **field-worker interface** of the FieldVault pl
 
 | Layer         | Technology                             | Why                                          |
 | ------------- | -------------------------------------- | -------------------------------------------- |
-| Framework     | React Native 0.74 + Expo SDK 51        | Managed workflow, OTA updates, easy builds   |
+| Framework     | React Native 0.81 + Expo SDK 54    | Managed workflow, OTA updates, easy builds   |
 | Language      | TypeScript 5.x                         | Shared types with backend/frontend           |
-| Navigation    | Expo Router v3 (file-based)            | Consistent with Next.js mental model         |
+| Navigation    | Expo Router v6 (file-based)        | Consistent with Next.js mental model         |
 | Storage       | MMKV (`react-native-mmkv`)             | 10x faster than AsyncStorage for auth tokens |
 | Server State  | TanStack Query v5                      | Same pattern as web, offline persistence     |
 | Client State  | Zustand                                | Lightweight, same pattern as web             |

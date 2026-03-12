@@ -60,9 +60,9 @@ The FieldVault backend is a **production-ready NestJS REST API** that serves bot
 
 | Layer         | Technology                          | Why                                              |
 | ------------- | ----------------------------------- | ------------------------------------------------ |
-| Framework     | NestJS 10                           | Modular, decorator-based, production-proven      |
+| Framework     | NestJS 11                           | Modular, decorator-based, production-proven      |
 | Language      | TypeScript 5.x                      | Full type safety, shared types with frontend     |
-| Database      | PostgreSQL 16                       | ACID compliant, relational, audit-friendly       |
+| Database      | PostgreSQL 17                       | ACID compliant, relational, audit-friendly       |
 | ORM           | TypeORM                             | NestJS-native integration, migrations, relations |
 | Cache / Queue | Redis (Upstash)                     | Fast caching + BullMQ job queue                  |
 | Job Queue     | BullMQ                              | Reliable background jobs (maintenance alerts)    |
