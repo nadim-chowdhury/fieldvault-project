@@ -1,0 +1,100 @@
+name: fieldvault-dev
+
+services:
+  # ─────────────────────────────────────
+  # PostgreSQL 16
+  # ─────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: fieldvault_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: fieldvault
+      POSTGRES_PASSWORD: fieldvault_dev_password
+      POSTGRES_DB: fieldvault
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fieldvault -d fieldvault"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - fieldvault_network
+
+  # ─────────────────────────────────────
+  # Redis 7
+  # ─────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: fieldvault_redis
+    restart: unless-stopped
+    command: redis-server --requirepass fieldvault_redis_password --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "fieldvault_redis_password", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - fieldvault_network
+
+  # ─────────────────────────────────────
+  # Redis Commander (GUI) — dev only
+  # Access at http://localhost:8081
+  # ─────────────────────────────────────
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: fieldvault_redis_gui
+    restart: unless-stopped
+    environment:
+      REDIS_HOSTS: "local:redis:6379:0:fieldvault_redis_password"
+    ports:
+      - "8081:8081"
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - fieldvault_network
+    profiles:
+      - tools   # Only starts with: docker compose --profile tools up
+
+  # ─────────────────────────────────────
+  # pgAdmin (GUI) — dev only
+  # Access at http://localhost:5050
+  # ─────────────────────────────────────
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: fieldvault_pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@fieldvault.io
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - fieldvault_network
+    profiles:
+      - tools   # Only starts with: docker compose --profile tools up
+
+volumes:
+  postgres_data:
+    name: fieldvault_postgres_data
+  redis_data:
+    name: fieldvault_redis_data
+
+networks:
+  fieldvault_network:
+    name: fieldvault_network
+    driver: bridge

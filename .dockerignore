@@ -1,0 +1,48 @@
+# Dependencies
+node_modules
+**/node_modules
+
+# Build outputs
+**/dist
+**/.next
+**/build
+**/web-build
+
+# Expo / Mobile (never dockerized)
+apps/mobile
+
+# Environment files
+.env
+**/.env
+**/.env.*
+
+# Git
+.git
+.gitignore
+
+# Docs
+docs
+*.md
+!apps/api/README.md
+
+# Tests
+**/coverage
+**/__tests__
+**/*.spec.ts
+**/*.test.ts
+**/playwright-report
+
+# IDE
+.vscode
+.idea
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs
+*.log
+
+# Turbo cache
+.turbo
