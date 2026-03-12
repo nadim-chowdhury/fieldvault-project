@@ -13,6 +13,14 @@ import redisConfig from './config/redis.config';
 import cloudinaryConfig from './config/cloudinary.config';
 import { validationSchema } from './config/validation.schema';
 
+// ─── Feature Modules ────────────────────────────────
+import { AuthModule } from './modules/auth/auth.module';
+import { CompaniesModule } from './modules/companies/companies.module';
+import { UsersModule } from './modules/users/users.module';
+import { AssetsModule } from './modules/assets/assets.module';
+import { AssignmentsModule } from './modules/assignments/assignments.module';
+import { MaintenanceModule } from './modules/maintenance/maintenance.module';
+
 @Module({
   imports: [
     // ─── Config (validated at startup) ────────────────
@@ -60,19 +68,13 @@ import { validationSchema } from './config/validation.schema';
       },
     ]),
 
-    // ─── Feature Modules (add here as built) ──────────
-    // AuthModule,
-    // CompaniesModule,
-    // UsersModule,
-    // AssetsModule,
-    // AssignmentsModule,
-    // MaintenanceModule,
-    // QrCodesModule,
-    // ReportsModule,
-    // NotificationsModule,
-    // UploadsModule,
-    // DashboardModule,
-    // JobsModule,
+    // ─── Feature Modules ──────────────────────────────
+    AuthModule,
+    CompaniesModule,
+    UsersModule,
+    AssetsModule,
+    AssignmentsModule,
+    MaintenanceModule,
   ],
   controllers: [AppController],
   providers: [AppService],

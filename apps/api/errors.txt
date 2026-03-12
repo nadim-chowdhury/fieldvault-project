@@ -1,0 +1,4 @@
+src/modules/auth/auth.service.ts(12,32): error TS2307: Cannot find module '../../users/entities/user.entity' or its corresponding type declarations.
+src/modules/auth/auth.service.ts(13,38): error TS2307: Cannot find module '../../companies/entities/company.entity' or its corresponding type declarations.
+src/modules/auth/auth.service.ts(14,39): error TS2307: Cannot find module '../dto/auth.dto' or its corresponding type declarations.
+src/modules/auth/auth.service.ts(15,28): error TS2307: Cannot find module '../strategies/jwt.strategy' or its corresponding type declarations.
