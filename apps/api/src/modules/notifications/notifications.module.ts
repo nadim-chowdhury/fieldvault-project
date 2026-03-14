@@ -4,6 +4,7 @@ import { NotificationsService } from './notifications.service';
 import { NotificationsController } from './notifications.controller';
 import { Notification } from './entities/notification.entity';
 import { User } from '../users/entities/user.entity';
+import { WhatsappService } from './services/whatsapp.service';
 import { AuthModule } from '../auth/auth.module';
 
 @Module({
@@ -12,7 +13,7 @@ import { AuthModule } from '../auth/auth.module';
     AuthModule,
   ],
   controllers: [NotificationsController],
-  providers: [NotificationsService],
-  exports: [NotificationsService],
+  providers: [NotificationsService, WhatsappService],
+  exports: [NotificationsService, WhatsappService],
 })
 export class NotificationsModule {}

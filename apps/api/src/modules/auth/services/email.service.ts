@@ -73,12 +73,31 @@ export class EmailService {
     await this.send(to, subject, html);
   }
 
-  private async send(to: string, subject: string, html: string): Promise<void> {
+  async sendComplianceReport(to: string, pdfBuffer: Buffer, monthStr: string): Promise<void> {
+    const subject = `FieldVault Compliance Report - ${monthStr}`;
+    const html = `
+      <div style="font-family:Arial,sans-serif;max-width:500px;margin:0 auto;padding:24px;">
+        <h2 style="color:#0f172a;">Monthly Compliance Report</h2>
+        <p style="color:#475569;">Attached is your automated compliance report for <strong>${monthStr}</strong>.</p>
+        <p style="color:#475569;">Thank you for using FieldVault!</p>
+      </div>
+    `;
+
+    const attachments = [{
+      filename: `compliance-report-${monthStr.replace(' ', '-').toLowerCase()}.pdf`,
+      content: pdfBuffer,
+      contentType: 'application/pdf',
+    }];
+
+    await this.send(to, subject, html, attachments);
+  }
+
+  private async send(to: string, subject: string, html: string, attachments?: any[]): Promise<void> {
     const from = this.configService.get<string>('SMTP_FROM', 'noreply@fieldvault.app');
 
     if (this.transporter) {
       try {
-        await this.transporter.sendMail({ from, to, subject, html });
+        await this.transporter.sendMail({ from, to, subject, html, attachments });
         this.logger.log(`Email sent to ${to}: ${subject}`);
       } catch (error) {
         this.logger.error(`Failed to send email to ${to}: ${error}`);

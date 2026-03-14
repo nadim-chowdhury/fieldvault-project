@@ -51,7 +51,7 @@ export class MaintenanceLog {
   @Column({ name: 'completed_at', type: 'timestamptz', nullable: true })
   completedAt: Date | null;
 
-  @Column({ name: 'performed_by', length: 100, nullable: true })
+  @Column({ name: 'performed_by', type: 'varchar', length: 100, nullable: true })
   performedBy: string | null;
 
   @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
@@ -63,7 +63,7 @@ export class MaintenanceLog {
   @Column({ name: 'technician_notes', type: 'text', nullable: true })
   technicianNotes: string | null;
 
-  @Column({ name: 'invoice_url', nullable: true })
+  @Column({ name: 'invoice_url', type: 'varchar', nullable: true })
   invoiceUrl: string | null;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })

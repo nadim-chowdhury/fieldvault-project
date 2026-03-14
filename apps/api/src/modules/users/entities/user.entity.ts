@@ -32,6 +32,9 @@ export class User {
   @Column({ length: 255, unique: true })
   email: string;
 
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  phone: string | null;
+
   @Column({ name: 'password_hash' })
   @Exclude()
   passwordHash: string;
@@ -42,7 +45,7 @@ export class User {
   @Column({ name: 'company_id' })
   companyId: string;
 
-  @Column({ name: 'avatar_url', nullable: true })
+  @Column({ name: 'avatar_url', type: 'varchar', nullable: true })
   avatarUrl: string | null;
 
   @Column({ name: 'is_active', default: true })
@@ -51,7 +54,7 @@ export class User {
   @Column({ name: 'invited_by', type: 'uuid', nullable: true })
   invitedBy: string | null;
 
-  @Column({ name: 'refresh_token_hash', nullable: true })
+  @Column({ name: 'refresh_token_hash', type: 'varchar', nullable: true })
   @Exclude()
   refreshTokenHash: string | null;
 

@@ -4,6 +4,10 @@ import { Repository, Between } from 'typeorm';
 import { Asset } from '../assets/entities/asset.entity';
 import { MaintenanceLog, MaintenanceStatus } from '../maintenance/entities/maintenance-log.entity';
 import { Assignment } from '../assignments/entities/assignment.entity';
+import { Cron } from '@nestjs/schedule';
+import { Company, CompanyPlan } from '../companies/entities/company.entity';
+import { UserRole } from '../users/entities/user.entity';
+import { EmailService } from '../auth/services/email.service';
 
 export interface AuditReportData {
   company: { name: string; generatedAt: string };
@@ -44,6 +48,9 @@ export class ReportsService {
     private readonly maintenanceRepo: Repository<MaintenanceLog>,
     @InjectRepository(Assignment)
     private readonly assignmentsRepo: Repository<Assignment>,
+    @InjectRepository(Company)
+    private readonly companiesRepo: Repository<Company>,
+    private readonly emailService: EmailService,
   ) {}
 
   async generateAuditReport(companyId: string, months: number = 12): Promise<AuditReportData> {
@@ -260,6 +267,37 @@ export class ReportsService {
       totalAssets: assets.length,
       byCategory,
     };
+  }
+
+  @Cron('0 0 1 * *')
+  async emailMonthlyComplianceReports() {
+    this.logger.log('Running monthly compliance report CRON job...');
+
+    const tier3Companies = await this.companiesRepo.find({
+      where: { plan: CompanyPlan.ENTERPRISE, isActive: true },
+      relations: ['users'],
+    });
+
+    for (const company of tier3Companies) {
+      try {
+        const reportBuffer = await this.generateAuditPdf(company.id, company.name, 1);
+        
+        const recipients = company.users
+          .filter(u => u.role === UserRole.ADMIN || u.role === UserRole.SUPERVISOR)
+          .map(u => u.email);
+
+        for (const email of recipients) {
+          await this.emailService.sendComplianceReport(
+            email, 
+            reportBuffer, 
+            new Date().toLocaleString('default', { month: 'long', year: 'numeric' })
+          );
+        }
+        this.logger.log(`Compliance report sent for company ${company.name}`);
+      } catch (error: any) {
+        this.logger.error(`Failed to send compliance report for company ${company.name}: ${error.message}`);
+      }
+    }
   }
 }
 

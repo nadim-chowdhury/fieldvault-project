@@ -25,6 +25,10 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { UploadsModule } from './modules/uploads/uploads.module';
 import { LoggerModule } from './common/logger/logger.module';
+import { SitesModule } from './modules/sites/sites.module';
+import { DocumentsModule } from './modules/documents/documents.module';
+import { PaymentsModule } from './modules/payments/payments.module';
+import { AuditLogsModule } from './modules/audit-logs/audit-logs.module';
 @Module({
   imports: [
     // ─── Config (validated at startup) ────────────────
@@ -84,6 +88,10 @@ import { LoggerModule } from './common/logger/logger.module';
     ReportsModule,
     UploadsModule,
     LoggerModule,
+    SitesModule,
+    DocumentsModule,
+    PaymentsModule,
+    AuditLogsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

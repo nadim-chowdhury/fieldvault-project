@@ -36,13 +36,13 @@ export class Assignment {
   @Column({ name: 'checked_in_at', type: 'timestamptz', nullable: true })
   checkedInAt: Date | null;
 
-  @Column({ name: 'condition_on_checkout', length: 500, nullable: true })
+  @Column({ name: 'condition_on_checkout', type: 'varchar', length: 500, nullable: true })
   conditionOnCheckout: string | null;
 
-  @Column({ name: 'condition_on_return', length: 500, nullable: true })
+  @Column({ name: 'condition_on_return', type: 'varchar', length: 500, nullable: true })
   conditionOnReturn: string | null;
 
-  @Column({ name: 'photo_on_return', nullable: true })
+  @Column({ name: 'photo_on_return', type: 'varchar', nullable: true })
   photoOnReturn: string | null;
 
   @Column({ type: 'text', nullable: true })

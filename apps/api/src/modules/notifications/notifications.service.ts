@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Notification, NotificationType } from './entities/notification.entity';
 import { User } from '../users/entities/user.entity';
 import { EmailService } from '../auth/services/email.service';
+import { WhatsappService } from './services/whatsapp.service';
 
 @Injectable()
 export class NotificationsService {
@@ -15,6 +16,7 @@ export class NotificationsService {
     @InjectRepository(User)
     private readonly usersRepo: Repository<User>,
     private readonly emailService: EmailService,
+    private readonly whatsappService: WhatsappService,
   ) {}
 
   async findAll(companyId: string, userId?: string, options?: { page?: number; limit?: number }) {
@@ -97,6 +99,10 @@ export class NotificationsService {
           await this.notificationsRepo.update(saved.id, { emailSent: true });
           saved.emailSent = true;
           this.logger.log(`Maintenance alert email sent to ${user.email}`);
+        }
+
+        if (user?.phone) {
+          await this.whatsappService.sendAlert(user.phone, `${data.title} - ${data.message}`);
         }
       } catch (error) {
         this.logger.error(`Failed to send notification email: ${error}`);

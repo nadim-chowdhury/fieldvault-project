@@ -37,7 +37,7 @@ export class Notification {
   @Column({ name: 'related_entity_id', type: 'uuid', nullable: true })
   relatedEntityId: string | null;
 
-  @Column({ name: 'related_entity_type', length: 50, nullable: true })
+  @Column({ name: 'related_entity_type', type: 'varchar', length: 50, nullable: true })
   relatedEntityType: string | null;
 
   @Column({ name: 'is_read', default: false })

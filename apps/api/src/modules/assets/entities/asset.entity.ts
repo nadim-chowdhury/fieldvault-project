@@ -12,6 +12,8 @@ import {
 import { Company } from '../../companies/entities/company.entity';
 import { Assignment } from '../../assignments/entities/assignment.entity';
 import { MaintenanceLog } from '../../maintenance/entities/maintenance-log.entity';
+import { Site } from '../../sites/entities/site.entity';
+import { Document } from '../../documents/entities/document.entity';
 
 export enum AssetStatus {
   AVAILABLE = 'available',
@@ -39,16 +41,19 @@ export class Asset {
   @Column({ name: 'company_id' })
   companyId: string;
 
+  @Column({ name: 'site_id', type: 'uuid', nullable: true })
+  siteId: string | null;
+
   @Column({ length: 200 })
   name: string;
 
   @Column({ name: 'serial_number', length: 100, unique: true })
   serialNumber: string;
 
-  @Column({ length: 100, nullable: true })
+  @Column({ type: 'varchar', length: 100, nullable: true })
   model: string | null;
 
-  @Column({ length: 100, nullable: true })
+  @Column({ type: 'varchar', length: 100, nullable: true })
   manufacturer: string | null;
 
   @Column({ type: 'enum', enum: AssetCategory })
@@ -57,10 +62,10 @@ export class Asset {
   @Column({ type: 'enum', enum: AssetStatus, default: AssetStatus.AVAILABLE })
   status: AssetStatus;
 
-  @Column({ name: 'qr_code_url', nullable: true })
+  @Column({ name: 'qr_code_url', type: 'varchar', nullable: true })
   qrCodeUrl: string | null;
 
-  @Column({ name: 'photo_url', nullable: true })
+  @Column({ name: 'photo_url', type: 'varchar', nullable: true })
   photoUrl: string | null;
 
   @Column({ name: 'purchase_value', type: 'decimal', precision: 10, scale: 2, nullable: true })
@@ -98,8 +103,15 @@ export class Asset {
   @JoinColumn({ name: 'company_id' })
   company: Company;
 
+  @ManyToOne(() => Site, (site) => site.assets, { onDelete: 'SET NULL', nullable: true })
+  @JoinColumn({ name: 'site_id' })
+  site: Site | null;
+
   @OneToMany(() => Assignment, (assignment) => assignment.asset)
   assignments: Assignment[];
+
+  @OneToMany(() => Document, (doc) => doc.asset)
+  documents: Document[];
 
   @OneToMany(() => MaintenanceLog, (log) => log.asset)
   maintenanceLogs: MaintenanceLog[];
