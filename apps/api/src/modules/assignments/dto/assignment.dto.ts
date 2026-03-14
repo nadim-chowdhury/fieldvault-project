@@ -32,6 +32,11 @@ export class CheckinDto {
   @MaxLength(500)
   conditionOnReturn?: string;
 
+  @ApiPropertyOptional({ example: 'https://res.cloudinary.com/demo/image/upload/v1/sample.jpg' })
+  @IsOptional()
+  @IsString()
+  photoOnReturnUrl?: string;
+
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()

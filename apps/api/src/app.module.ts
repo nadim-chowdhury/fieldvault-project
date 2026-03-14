@@ -29,6 +29,7 @@ import { SitesModule } from './modules/sites/sites.module';
 import { DocumentsModule } from './modules/documents/documents.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { AuditLogsModule } from './modules/audit-logs/audit-logs.module';
+import { ApiKeysModule } from './modules/api-keys/api-keys.module';
 @Module({
   imports: [
     // ─── Config (validated at startup) ────────────────
@@ -92,6 +93,7 @@ import { AuditLogsModule } from './modules/audit-logs/audit-logs.module';
     DocumentsModule,
     PaymentsModule,
     AuditLogsModule,
+    ApiKeysModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -41,10 +41,22 @@ export class AssetsController {
   }
 
   @Get(':id/qr-code')
-  @ApiOperation({ summary: 'Get QR code for an asset' })
-  async getQrCode(@Param('id') id: string, @CurrentUser() user: User) {
+  @ApiOperation({ summary: 'Get QR code for an asset (supports ?format=svg)' })
+  @ApiQuery({ name: 'format', enum: ['png', 'svg'], required: false })
+  async getQrCode(@Param('id') id: string, @Query('format') format: string, @CurrentUser() user: User) {
+    if (format === 'svg') {
+      const svg = await this.assetsService.getQrCodeSvg(id, user.companyId);
+      return { qrCode: svg, format: 'svg' };
+    }
     const qrCode = await this.assetsService.getQrCode(id, user.companyId);
-    return { qrCode };
+    return { qrCode, format: 'png' };
+  }
+
+  @Post('bulk-qr')
+  @Roles(UserRole.ADMIN, UserRole.SUPERVISOR)
+  @ApiOperation({ summary: 'Generate bulk A4 print sheet for assets' })
+  async getBulkQrCodes(@Body() dto: { assetIds: string[] }, @CurrentUser() user: User) {
+    return this.assetsService.generateBulkQrSheet(dto.assetIds, user.companyId, user.company?.name || 'Company');
   }
 
   @Post()

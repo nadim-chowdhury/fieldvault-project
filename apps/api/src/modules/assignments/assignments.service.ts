@@ -69,6 +69,7 @@ export class AssignmentsService {
     // Update assignment
     assignment.checkedInAt = new Date();
     assignment.conditionOnReturn = dto.conditionOnReturn ?? null;
+    assignment.photoOnReturn = dto.photoOnReturnUrl ?? null;
     if (dto.notes) assignment.notes = dto.notes;
     await this.assignmentsRepo.save(assignment);
 

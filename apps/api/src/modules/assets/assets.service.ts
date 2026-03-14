@@ -108,4 +108,69 @@ export class AssetsService {
     }
     return asset.qrCodeUrl;
   }
+
+  async getQrCodeSvg(id: string, companyId: string): Promise<string> {
+    const asset = await this.findOne(id, companyId);
+    return this.qrCodeService.generateQrCodeSvg(id);
+  }
+
+  async generateBulkQrSheet(assetIds: string[], companyId: string, companyName: string): Promise<string> {
+    const assets = await this.assetsRepo.find({
+      where: { companyId },
+    });
+    const requestedAssets = assets.filter(a => assetIds.includes(a.id));
+    
+    // Generate SVGs for high quality print
+    const qrItems = await Promise.all(requestedAssets.map(async (asset) => {
+      const svg = await this.qrCodeService.generateQrCodeSvg(asset.id);
+      return { asset, svg };
+    }));
+
+    return `<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: sans-serif; margin: 0; padding: 0; background: #fff; }
+    .sheet {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-gap: 20px;
+      padding: 40px;
+      width: 210mm;
+      min-height: 297mm;
+      box-sizing: border-box;
+      margin: 0 auto;
+    }
+    .label {
+      border: 2px dashed #ccc;
+      padding: 15px;
+      text-align: center;
+      page-break-inside: avoid;
+    }
+    .qr-svg svg { width: 120px; height: 120px; }
+    .company { font-weight: bold; font-size: 14px; margin-bottom: 8px; }
+    .name { font-size: 16px; font-weight: bold; margin-bottom: 4px; }
+    .serial { font-size: 12px; color: #666; }
+    @media print {
+      body { margin: 0; padding: 0; }
+      .sheet { padding: 10px; width: 100%; border: none; }
+      .label { border: 1px dashed #ccc; }
+    }
+  </style>
+</head>
+<body>
+  <div class="sheet">
+    ${qrItems.map(item => `
+      <div class="label">
+        <div class="company">${companyName}</div>
+        <div class="name">${item.asset.name}</div>
+        <div class="serial">SN: ${item.asset.serialNumber}</div>
+        <div class="qr-svg">${item.svg}</div>
+      </div>
+    `).join('')}
+  </div>
+  <script>window.onload = () => window.print();</script>
+</body>
+</html>`;
+  }
 }
