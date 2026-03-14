@@ -49,8 +49,9 @@ export const assignmentsApi = {
   active: () => api.get('/assignments/active'),
   checkout: (data: { assetId: string; siteLocation: string; conditionOnCheckout?: string }) =>
     api.post('/assignments/checkout', data),
-  checkin: (id: string, data: { conditionOnReturn?: string }) =>
+  checkin: (id: string, data: { conditionOnReturn?: string; photoOnReturnUrl?: string; notes?: string }) =>
     api.post(`/assignments/${id}/checkin`, data),
+  findByAsset: (assetId: string) => api.get(`/assignments/asset/${assetId}`),
 };
 
 export const notificationsApi = {

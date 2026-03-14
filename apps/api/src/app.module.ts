@@ -47,7 +47,7 @@ import { ApiKeysModule } from './modules/api-keys/api-keys.module';
         url: config.get<string>('DATABASE_URL'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
         migrations: [__dirname + '/database/migrations/**/*{.ts,.js}'],
-        synchronize: false,
+        synchronize: config.get<string>('NODE_ENV') !== 'production',
         logging: config.get<string>('NODE_ENV') === 'development',
         ssl:
           config.get<string>('NODE_ENV') === 'production'

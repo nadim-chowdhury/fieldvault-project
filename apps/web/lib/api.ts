@@ -70,7 +70,19 @@ export const assetsApi = {
   create: (data: Partial<Asset>) => api.post<{ data: Asset }>('/assets', data),
   update: (id: string, data: Partial<Asset>) => api.patch<{ data: Asset }>(`/assets/${id}`, data),
   archive: (id: string) => api.delete(`/assets/${id}`),
-  getQrCode: (id: string) => api.get<{ data: { qrCode: string } }>(`/assets/${id}/qr-code`),
+  getQrCode: (id: string, format?: 'png' | 'svg') => 
+    api.get<{ data: { qrCode: string, format: string } }>(`/assets/${id}/qr-code`, { params: { format } }),
+  getBulkQrCodes: (assetIds: string[]) => 
+    api.post<string>('/assets/bulk-qr', { assetIds }, { responseType: 'text' }),
+};
+
+// ─── Assignments API ────────────────────────────────
+export const assignmentsApi = {
+  checkOut: (data: { assetId: string; siteLocation: string; conditionOnCheckout?: string; notes?: string }) =>
+    api.post('/assignments/checkout', data),
+  checkIn: (id: string, data: { conditionOnReturn?: string; photoOnReturnUrl?: string; notes?: string }) =>
+    api.post(`/assignments/${id}/checkin`, data),
+  findByAsset: (assetId: string) => api.get(`/assignments/asset/${assetId}`),
 };
 
 // ─── Users API ──────────────────────────────────────

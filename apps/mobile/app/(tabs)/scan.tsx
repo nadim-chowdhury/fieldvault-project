@@ -52,6 +52,30 @@ export default function ScanTab() {
     setLoading(false);
   };
 
+  const handleCheckin = async () => {
+    setLoading(true);
+    try {
+      // Find active assignment
+      const asgRes = await assignmentsApi.findByAsset(scannedAsset.id);
+      const activeAsg = asgRes.data?.find((a: any) => !a.checkedInAt);
+      
+      if (!activeAsg) {
+         Alert.alert('Error', 'No active assignment found to check-in.');
+         setLoading(false);
+         return;
+      }
+
+      await assignmentsApi.checkin(activeAsg.id, {
+        conditionOnReturn: condition || undefined,
+      });
+      Alert.alert('Success', `${scannedAsset.name} checked in successfully!`);
+      resetScanner();
+    } catch (err: any) {
+      Alert.alert('Error', err.response?.data?.message || 'Check-in failed');
+    }
+    setLoading(false);
+  };
+
   const resetScanner = () => {
     setScanState('scanning');
     setScannedAsset(null);
@@ -111,8 +135,22 @@ export default function ScanTab() {
             <TouchableOpacity style={s.checkoutBtn} onPress={handleCheckout} disabled={loading}>
               {loading ? <ActivityIndicator color="#fff" /> : (
                 <>
-                  <Ionicons name="arrow-down-circle" size={20} color="#fff" />
+                  <Ionicons name="arrow-up-circle" size={20} color="#fff" />
                   <Text style={s.checkoutBtnText}>Check Out Asset</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
+        ) : scannedAsset.status === 'in_use' ? (
+          <View style={s.checkoutForm}>
+             <Text style={s.formLabel}>Return Condition Notes</Text>
+             <TextInput style={s.formInput} value={condition} onChangeText={setCondition} placeholder="Minor wear, low battery" placeholderTextColor="#64748b" multiline />
+             
+             <TouchableOpacity style={[s.checkoutBtn, { backgroundColor: '#10b981' }]} onPress={handleCheckin} disabled={loading}>
+              {loading ? <ActivityIndicator color="#fff" /> : (
+                <>
+                  <Ionicons name="arrow-down-circle" size={20} color="#fff" />
+                  <Text style={s.checkoutBtnText}>Check In Asset</Text>
                 </>
               )}
             </TouchableOpacity>
@@ -120,7 +158,7 @@ export default function ScanTab() {
         ) : (
           <View style={s.infoCard}>
             <Ionicons name="information-circle" size={20} color="#f59e0b" />
-            <Text style={s.infoText}>This asset is currently {scannedAsset.status?.replace('_', ' ')} and cannot be checked out.</Text>
+            <Text style={s.infoText}>This asset is currently {scannedAsset.status?.replace('_', ' ')} and cannot be managed assigned.</Text>
           </View>
         )}
 

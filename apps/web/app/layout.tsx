@@ -16,14 +16,20 @@ export const metadata: Metadata = {
   },
   description:
     "Audit-ready asset management for construction firms. Track tools, schedule maintenance, pass inspections.",
-  keywords: ["asset management", "construction", "equipment tracking", "maintenance", "audit"],
+  keywords: [
+    "asset management",
+    "construction",
+    "equipment tracking",
+    "maintenance",
+    "audit",
+  ],
 };
 
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} antialiased`}>
         <Providers>{children}</Providers>
       </body>

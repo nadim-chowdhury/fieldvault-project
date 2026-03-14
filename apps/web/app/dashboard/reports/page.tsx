@@ -3,6 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { reportsApi } from '@/lib/api';
 import { FileText, Download, Shield, Package, Loader2, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function ReportsPage() {
   const { data: auditData, isLoading: auditLoading } = useQuery({
@@ -14,6 +15,23 @@ export default function ReportsPage() {
     queryKey: ['reports-inventory'],
     queryFn: () => reportsApi.inventoryReport().then((r) => r.data?.data || r.data),
   });
+
+  const handleExportPdf = async () => {
+    try {
+      toast.loading('Generating PDF...', { id: 'pdf-export' });
+      const response = await reportsApi.auditReportPdf(12);
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `fieldvault-audit-report-${new Date().toISOString().split('T')[0]}.pdf`;
+      link.click();
+      window.URL.revokeObjectURL(url);
+      toast.success('PDF Exported Successfully!', { id: 'pdf-export' });
+    } catch (e: any) {
+      toast.error('Failed to generate PDF', { id: 'pdf-export' });
+    }
+  };
 
   return (
     <div className="p-6 lg:p-8 animate-fadeIn">
@@ -34,7 +52,10 @@ export default function ReportsPage() {
               <p className="text-sm text-slate-500">Last 12 months maintenance & inspection data</p>
             </div>
           </div>
-          <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-50 text-emerald-700 text-sm font-medium hover:bg-emerald-100 transition-colors cursor-pointer">
+          <button 
+            onClick={handleExportPdf}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-50 text-emerald-700 text-sm font-medium hover:bg-emerald-100 transition-colors cursor-pointer"
+          >
             <Download className="w-4 h-4" />
             Export PDF
           </button>
