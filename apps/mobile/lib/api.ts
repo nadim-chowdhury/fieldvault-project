@@ -33,6 +33,8 @@ export const authApi = {
   login: (data: { email: string; password: string }) =>
     api.post('/auth/login', data),
   logout: () => api.post('/auth/logout'),
+  changePassword: (data: { currentPassword: string; newPassword: string }) =>
+    api.post('/auth/change-password', data),
 };
 
 export const dashboardApi = {
@@ -54,8 +56,21 @@ export const assignmentsApi = {
   findByAsset: (assetId: string) => api.get(`/assignments/asset/${assetId}`),
 };
 
+export const maintenanceApi = {
+  list: (params?: Record<string, any>) => api.get('/maintenance', { params }),
+  listOverdue: () => api.get('/maintenance/overdue'),
+  get: (id: string) => api.get(`/maintenance/${id}`),
+  create: (data: any) => api.post('/maintenance', data),
+  update: (id: string, data: any) => api.patch(`/maintenance/${id}`, data),
+  remove: (id: string) => api.delete(`/maintenance/${id}`),
+};
+
 export const notificationsApi = {
   list: () => api.get('/notifications'),
   unreadCount: () => api.get('/notifications/unread-count'),
   markRead: (id: string) => api.patch(`/notifications/${id}/read`),
+};
+
+export const companiesApi = {
+  getMyCompany: () => api.get('/companies/me'),
 };

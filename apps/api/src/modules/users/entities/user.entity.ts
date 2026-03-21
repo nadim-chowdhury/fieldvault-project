@@ -10,6 +10,7 @@ import {
   Index,
 } from 'typeorm';
 import { Company } from '../../companies/entities/company.entity';
+import { CompanyMembership } from '../../companies/entities/company-membership.entity';
 import { Assignment } from '../../assignments/entities/assignment.entity';
 import { Exclude } from 'class-transformer';
 
@@ -74,4 +75,7 @@ export class User {
 
   @OneToMany(() => Assignment, (assignment) => assignment.user)
   assignments: Assignment[];
+
+  @OneToMany(() => CompanyMembership, (membership) => membership.user)
+  memberships: CompanyMembership[];
 }

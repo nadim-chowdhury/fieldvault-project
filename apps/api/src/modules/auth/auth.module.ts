@@ -8,12 +8,13 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { EmailService } from './services/email.service';
 import { User } from '../users/entities/user.entity';
 import { Company } from '../companies/entities/company.entity';
+import { CompanyMembership } from '../companies/entities/company-membership.entity';
 
 @Module({
   imports: [
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.register({}),
-    TypeOrmModule.forFeature([User, Company]),
+    TypeOrmModule.forFeature([User, Company, CompanyMembership]),
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, EmailService],

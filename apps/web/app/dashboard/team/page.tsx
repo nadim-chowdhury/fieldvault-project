@@ -1,9 +1,10 @@
 'use client';
 
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { usersApi } from '@/lib/api';
 import { toast } from 'sonner';
-import { Users, UserPlus, Shield, Eye, Trash2, Loader2 } from 'lucide-react';
+import { Users, UserPlus, Shield, Trash2, Loader2, X, Mail } from 'lucide-react';
 
 const roleColors: Record<string, string> = {
   admin: 'bg-violet-100 text-violet-700',
@@ -11,8 +12,20 @@ const roleColors: Record<string, string> = {
   worker: 'bg-slate-100 text-slate-600',
 };
 
+const roleDescriptions: Record<string, string> = {
+  admin: 'Full access — billing, team, all modules',
+  supervisor: 'Manage assets, assignments, maintenance',
+  worker: 'View assets, scan QR, check out/in',
+};
+
 export default function TeamPage() {
   const queryClient = useQueryClient();
+  const [isInviteOpen, setIsInviteOpen] = useState(false);
+  const [inviteForm, setInviteForm] = useState({
+    name: '',
+    email: '',
+    role: 'worker',
+  });
 
   const { data, isLoading } = useQuery({
     queryKey: ['users'],
@@ -27,7 +40,26 @@ export default function TeamPage() {
     },
   });
 
-  const users = Array.isArray(data) ? data : [];
+  const inviteMutation = useMutation({
+    mutationFn: (data: { name: string; email: string; role: string }) => usersApi.invite(data),
+    onSuccess: () => {
+      toast.success(`Invitation sent to ${inviteForm.email}`);
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      setIsInviteOpen(false);
+      setInviteForm({ name: '', email: '', role: 'worker' });
+    },
+    onError: (e: any) => {
+      toast.error(e.response?.data?.message || 'Failed to send invitation');
+    },
+  });
+
+  const handleInvite = (e: React.FormEvent) => {
+    e.preventDefault();
+    inviteMutation.mutate(inviteForm);
+  };
+
+  const rawUsers = data?.data || data;
+  const users = Array.isArray(rawUsers) ? rawUsers : [];
 
   return (
     <div className="p-6 lg:p-8 animate-fadeIn">
@@ -36,7 +68,11 @@ export default function TeamPage() {
           <h1 className="text-2xl font-bold text-slate-900">Team</h1>
           <p className="text-slate-500 text-sm mt-1">Manage your crew and access roles</p>
         </div>
-        <button className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-white text-sm font-semibold shadow-sm hover:shadow-md transition-all cursor-pointer" style={{ background: 'linear-gradient(135deg, #2563eb, #1d4ed8)' }}>
+        <button
+          onClick={() => setIsInviteOpen(true)}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-white text-sm font-semibold shadow-sm hover:shadow-md transition-all cursor-pointer"
+          style={{ background: 'linear-gradient(135deg, #2563eb, #1d4ed8)' }}
+        >
           <UserPlus className="w-4 h-4" />
           Invite Member
         </button>
@@ -102,6 +138,89 @@ export default function TeamPage() {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* Invite Member Modal */}
+      {isInviteOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 animate-fadeIn">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-slideUp">
+            <div className="flex items-center justify-between p-5 border-b border-slate-100">
+              <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+                <UserPlus className="w-5 h-5 text-blue-600" /> Invite Team Member
+              </h3>
+              <button onClick={() => setIsInviteOpen(false)} className="p-1.5 text-slate-400 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleInvite} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">Full Name *</label>
+                <input
+                  required
+                  type="text"
+                  value={inviteForm.name}
+                  onChange={(e) => setInviteForm({ ...inviteForm, name: e.target.value })}
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm placeholder:text-slate-400"
+                  placeholder="e.g. John Smith"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">Email Address *</label>
+                <input
+                  required
+                  type="email"
+                  value={inviteForm.email}
+                  onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })}
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm placeholder:text-slate-400"
+                  placeholder="john@company.com"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">Role *</label>
+                <div className="space-y-2">
+                  {['admin', 'supervisor', 'worker'].map((role) => (
+                    <label
+                      key={role}
+                      className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
+                        inviteForm.role === role
+                          ? 'border-blue-300 bg-blue-50'
+                          : 'border-slate-200 hover:border-slate-300'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="role"
+                        value={role}
+                        checked={inviteForm.role === role}
+                        onChange={(e) => setInviteForm({ ...inviteForm, role: e.target.value })}
+                        className="text-blue-600 focus:ring-blue-500"
+                      />
+                      <div>
+                        <p className="text-sm font-medium text-slate-900 capitalize">{role}</p>
+                        <p className="text-xs text-slate-500">{roleDescriptions[role]}</p>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 flex items-start gap-2">
+                <Mail className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
+                <p className="text-xs text-blue-700">An invitation email with login credentials will be sent to the team member.</p>
+              </div>
+
+              <button
+                disabled={inviteMutation.isPending}
+                type="submit"
+                className="w-full py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-sm cursor-pointer"
+              >
+                {inviteMutation.isPending ? 'Sending Invitation...' : 'Send Invitation'}
+              </button>
+            </form>
+          </div>
         </div>
       )}
     </div>

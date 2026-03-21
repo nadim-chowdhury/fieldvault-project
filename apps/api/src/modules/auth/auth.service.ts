@@ -12,6 +12,7 @@ import { Repository } from 'typeorm';
 import bcrypt from 'bcrypt';
 import { User, UserRole } from '../users/entities/user.entity';
 import { Company, CompanyPlan } from '../companies/entities/company.entity';
+import { CompanyMembership, MembershipRole } from '../companies/entities/company-membership.entity';
 import {
   RegisterDto,
   LoginDto,
@@ -31,6 +32,8 @@ export class AuthService {
     private readonly usersRepo: Repository<User>,
     @InjectRepository(Company)
     private readonly companiesRepo: Repository<Company>,
+    @InjectRepository(CompanyMembership)
+    private readonly membershipsRepo: Repository<CompanyMembership>,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly emailService: EmailService,
@@ -70,6 +73,15 @@ export class AuthService {
     });
     await this.usersRepo.save(user);
 
+    // Create membership
+    const membership = this.membershipsRepo.create({
+      userId: user.id,
+      companyId: company.id,
+      role: MembershipRole.ADMIN,
+      isDefault: true,
+    });
+    await this.membershipsRepo.save(membership);
+
     // Generate tokens
     const tokens = await this.generateTokens(user);
     await this.updateRefreshTokenHash(user.id, tokens.refreshToken);
@@ -80,6 +92,7 @@ export class AuthService {
       tokens,
       user: this.sanitizeUser(user),
       company,
+      companies: [company],
     };
   }
 
@@ -107,10 +120,18 @@ export class AuthService {
     // Update last login
     await this.usersRepo.update(user.id, { lastLoginAt: new Date() });
 
+    // Load all memberships for the user
+    const memberships = await this.membershipsRepo.find({
+      where: { userId: user.id },
+      relations: ['company'],
+    });
+    const companies = memberships.map((m) => m.company);
+
     return {
       tokens,
       user: this.sanitizeUser(user),
       company: user.company,
+      companies,
     };
   }
 

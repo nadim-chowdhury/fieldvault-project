@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { assetsApi } from '@/lib/api';
 import { toast } from 'sonner';
+import { AssetStatus } from '@fieldvault/types';
 import {
   Package, Plus, Search, Filter, QrCode, Pencil, Archive,
   ChevronLeft, ChevronRight, Loader2, Printer, X, Download
@@ -31,11 +32,12 @@ const categoryLabels: Record<string, string> = {
 export default function AssetsPage() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
-  const [status, setStatus] = useState('');
+  const [status, setStatus] = useState<AssetStatus | ''>('');
   const [page, setPage] = useState(1);
   const [selectedAssets, setSelectedAssets] = useState<string[]>([]);
   const [qrModalAsset, setQrModalAsset] = useState<any | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [editAsset, setEditAsset] = useState<any | null>(null);
 
   // Add Asset Form State
   const [addForm, setAddForm] = useState({
@@ -45,6 +47,16 @@ export default function AssetsPage() {
     purchaseValue: '',
     manufacturer: '',
     warrantyDetails: '',
+  });
+
+  // Edit Asset Form State
+  const [editForm, setEditForm] = useState({
+    name: '',
+    serialNumber: '',
+    category: 'power_tool',
+    purchaseValue: '',
+    manufacturer: '',
+    notes: '',
   });
 
   const { data: qrData, isLoading: qrLoading } = useQuery({
@@ -81,6 +93,18 @@ export default function AssetsPage() {
     }
   });
 
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => assetsApi.update(id, data),
+    onSuccess: () => {
+      toast.success('Asset updated successfully!');
+      queryClient.invalidateQueries({ queryKey: ['assets'] });
+      setEditAsset(null);
+    },
+    onError: (e: any) => {
+      toast.error(e.response?.data?.message || 'Failed to update asset');
+    }
+  });
+
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
     const payload: any = {
@@ -93,6 +117,31 @@ export default function AssetsPage() {
     if (addForm.warrantyDetails) payload.notes = `Warranty Details: ${addForm.warrantyDetails}`;
 
     createMutation.mutate(payload);
+  };
+
+  const openEditModal = (asset: any) => {
+    setEditForm({
+      name: asset.name || '',
+      serialNumber: asset.serialNumber || '',
+      category: asset.category || 'power_tool',
+      purchaseValue: asset.purchaseValue ? String(asset.purchaseValue) : '',
+      manufacturer: asset.manufacturer || '',
+      notes: asset.notes || '',
+    });
+    setEditAsset(asset);
+  };
+
+  const handleUpdate = (e: React.FormEvent) => {
+    e.preventDefault();
+    const payload: any = {
+      name: editForm.name,
+      serialNumber: editForm.serialNumber,
+      category: editForm.category,
+    };
+    if (editForm.purchaseValue) payload.purchaseValue = Number(editForm.purchaseValue);
+    if (editForm.manufacturer) payload.manufacturer = editForm.manufacturer;
+    if (editForm.notes) payload.notes = editForm.notes;
+    updateMutation.mutate({ id: editAsset.id, data: payload });
   };
 
   const handleSelect = (id: string) => {
@@ -158,7 +207,7 @@ export default function AssetsPage() {
         </div>
         <select
           value={status}
-          onChange={(e) => { setStatus(e.target.value); setPage(1); }}
+          onChange={(e) => { setStatus(e.target.value as AssetStatus | ''); setPage(1); }}
           className="px-4 py-2.5 rounded-lg border border-slate-200 text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
         >
           <option value="">All Status</option>
@@ -233,7 +282,10 @@ export default function AssetsPage() {
               </div>
 
               <div className="flex items-center gap-2 pt-3 border-t border-slate-100">
-                <button className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer">
+                <button
+                  onClick={() => openEditModal(asset)}
+                  className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer"
+                >
                   <Pencil className="w-3.5 h-3.5" /> Edit
                 </button>
                 <button 
@@ -335,48 +387,103 @@ export default function AssetsPage() {
       {/* Add Asset Modal */}
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 animate-fadeIn">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden animate-slideUp">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-slideUp">
             <div className="flex items-center justify-between p-5 border-b border-slate-100">
               <h3 className="font-semibold text-slate-900 flex items-center gap-2">
-                <Plus className="w-5 h-5 text-blue-600" /> Track New Asset
+                <Package className="w-5 h-5 text-blue-600" /> Add New Asset
               </h3>
-              <button onClick={() => setIsAddModalOpen(false)} className="p-1.5 text-slate-400 hover:bg-slate-100 rounded-lg transition-colors">
+              <button onClick={() => setIsAddModalOpen(false)} className="p-1.5 text-slate-400 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer">
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <form onSubmit={handleCreate} className="p-6">
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                <div className="col-span-2">
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Asset Name *</label>
-                  <input required value={addForm.name} onChange={e => setAddForm({...addForm, name: e.target.value})} type="text" className="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm placeholder:text-slate-400" placeholder="e.g. DeWalt Hammer Drill" />
-                </div>
+            <form onSubmit={handleCreate} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">Asset Name *</label>
+                <input required value={addForm.name} onChange={e => setAddForm({...addForm, name: e.target.value})} type="text" className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm" placeholder="e.g. DeWalt Hammer Drill" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1.5">Serial Number *</label>
-                  <input required value={addForm.serialNumber} onChange={e => setAddForm({...addForm, serialNumber: e.target.value})} type="text" className="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm placeholder:text-slate-400" placeholder="SN-12345" />
+                  <input required value={addForm.serialNumber} onChange={e => setAddForm({...addForm, serialNumber: e.target.value})} type="text" className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm" placeholder="SN-12345" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1.5">Category *</label>
-                  <select required value={addForm.category} onChange={e => setAddForm({...addForm, category: e.target.value})} className="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm bg-white">
+                  <select required value={addForm.category} onChange={e => setAddForm({...addForm, category: e.target.value})} className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm bg-white cursor-pointer">
                     {Object.entries(categoryLabels).map(([key, label]) => (
                       <option key={key} value={key}>{label}</option>
                     ))}
                   </select>
                 </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1.5">Purchase Value ($)</label>
-                  <input value={addForm.purchaseValue} onChange={e => setAddForm({...addForm, purchaseValue: e.target.value})} type="number" step="0.01" className="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm placeholder:text-slate-400" placeholder="e.g. 299.99" />
+                  <input value={addForm.purchaseValue} onChange={e => setAddForm({...addForm, purchaseValue: e.target.value})} type="number" step="0.01" className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm" placeholder="299.99" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1.5">Manufacturer</label>
-                  <input value={addForm.manufacturer} onChange={e => setAddForm({...addForm, manufacturer: e.target.value})} type="text" className="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm placeholder:text-slate-400" placeholder="e.g. DeWalt" />
-                </div>
-                <div className="col-span-2">
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Warranty Details</label>
-                  <input value={addForm.warrantyDetails} onChange={e => setAddForm({...addForm, warrantyDetails: e.target.value})} type="text" className="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm placeholder:text-slate-400" placeholder="e.g. 3 years manufacturer warranty until 2029" />
+                  <input value={addForm.manufacturer} onChange={e => setAddForm({...addForm, manufacturer: e.target.value})} type="text" className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm" placeholder="e.g. DeWalt" />
                 </div>
               </div>
-              <button disabled={createMutation.isPending} type="submit" className="w-full py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-sm mt-2">
-                {createMutation.isPending ? 'Saving Asset...' : 'Save Asset'}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">Warranty Details</label>
+                <textarea value={addForm.warrantyDetails} onChange={e => setAddForm({...addForm, warrantyDetails: e.target.value})} rows={3} className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm placeholder:text-slate-400" placeholder="e.g. 3 years manufacturer warranty until 2029" />
+              </div>
+              <button disabled={createMutation.isPending} type="submit" className="w-full py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-sm cursor-pointer">
+                {createMutation.isPending ? 'Saving Asset...' : 'Create Asset'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Asset Modal */}
+      {editAsset && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 animate-fadeIn">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-slideUp">
+            <div className="flex items-center justify-between p-5 border-b border-slate-100">
+              <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+                <Pencil className="w-5 h-5 text-blue-600" /> Edit Asset
+              </h3>
+              <button onClick={() => setEditAsset(null)} className="p-1.5 text-slate-400 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleUpdate} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">Asset Name *</label>
+                <input required value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} type="text" className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Serial Number *</label>
+                  <input required value={editForm.serialNumber} onChange={e => setEditForm({...editForm, serialNumber: e.target.value})} type="text" className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Category *</label>
+                  <select required value={editForm.category} onChange={e => setEditForm({...editForm, category: e.target.value})} className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm bg-white cursor-pointer">
+                    {Object.entries(categoryLabels).map(([key, label]) => (
+                      <option key={key} value={key}>{label}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Purchase Value ($)</label>
+                  <input value={editForm.purchaseValue} onChange={e => setEditForm({...editForm, purchaseValue: e.target.value})} type="number" step="0.01" className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Manufacturer</label>
+                  <input value={editForm.manufacturer} onChange={e => setEditForm({...editForm, manufacturer: e.target.value})} type="text" className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">Notes</label>
+                <textarea value={editForm.notes} onChange={e => setEditForm({...editForm, notes: e.target.value})} rows={3} className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm placeholder:text-slate-400" placeholder="Additional notes..." />
+              </div>
+              <button disabled={updateMutation.isPending} type="submit" className="w-full py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-sm cursor-pointer">
+                {updateMutation.isPending ? 'Saving Changes...' : 'Save Changes'}
               </button>
             </form>
           </div>

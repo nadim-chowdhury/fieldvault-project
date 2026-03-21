@@ -130,5 +130,23 @@ export const companiesApi = {
   getMyCompany: () => api.get<{ data: Company }>('/companies/me'),
   getStats: () => api.get('/companies/me/stats'),
   update: (data: Partial<Company>) => api.patch<{ data: Company }>('/companies/me', data),
+  listMyCompanies: () => api.get('/companies/my-companies'),
+  switchCompany: (companyId: string) => api.post('/companies/switch', { companyId }),
+  createCompany: (data: { name: string }) => api.post('/companies', data),
 };
 
+// ─── Sites API ──────────────────────────────────────
+export const sitesApi = {
+  list: () => api.get('/sites'),
+  get: (id: string) => api.get(`/sites/${id}`),
+  create: (data: { name: string; address?: string; latitude?: number; longitude?: number; notes?: string }) =>
+    api.post('/sites', data),
+  update: (id: string, data: any) => api.patch(`/sites/${id}`, data),
+  remove: (id: string) => api.delete(`/sites/${id}`),
+};
+
+// ─── Audit Logs API ─────────────────────────────────
+export const auditLogsApi = {
+  list: (params?: PaginationParams & { entityName?: string }) =>
+    api.get('/audit-logs', { params }),
+};

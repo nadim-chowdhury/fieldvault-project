@@ -5,15 +5,17 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { authApi } from '@/lib/api';
 import { useAuthStore } from '@/lib/auth-store';
-import { Shield, Eye, EyeOff, Loader2, ArrowRight, HardHat } from 'lucide-react';
+import { Shield, Eye, EyeOff, Loader2, ArrowRight, HardHat, Mail, ArrowLeft } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
   const login = useAuthStore((s) => s.login);
 
   const [isLogin, setIsLogin] = useState(true);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
 
   const [form, setForm] = useState({
     companyName: '',
@@ -29,17 +31,32 @@ export default function LoginPage() {
       if (isLogin) {
         const { data } = await authApi.login({ email: form.email, password: form.password });
         const res = data.data || data;
-        login(res.user, res.company, res.tokens);
+        login(res.user, res.company, res.companies || [res.company], res.tokens);
         toast.success('Welcome back!');
       } else {
         const { data } = await authApi.register(form);
         const res = data.data || data;
-        login(res.user, res.company, res.tokens);
+        login(res.user, res.company, res.companies || [res.company], res.tokens);
         toast.success('Company registered! Welcome to FieldVault.');
       }
       router.push('/dashboard');
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Something went wrong');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await authApi.forgotPassword({ email: resetEmail });
+      toast.success('Password reset email sent! Check your inbox.');
+      setIsForgotPassword(false);
+      setResetEmail('');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to send reset email');
     } finally {
       setLoading(false);
     }
@@ -87,100 +104,149 @@ export default function LoginPage() {
               <span className="text-xl font-bold text-slate-900">FieldVault</span>
             </div>
 
-            <h2 className="text-2xl font-bold text-slate-900 mb-1">
-              {isLogin ? 'Welcome back' : 'Create your account'}
-            </h2>
-            <p className="text-slate-500 mb-6 text-sm">
-              {isLogin ? 'Sign in to your dashboard' : 'Start your 14-day free trial'}
-            </p>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {!isLogin && (
-                <>
+            {isForgotPassword ? (
+              /* ─── Forgot Password Form ─── */
+              <div className="animate-fadeIn">
+                <button
+                  onClick={() => setIsForgotPassword(false)}
+                  className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700 mb-4 cursor-pointer"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" /> Back to login
+                </button>
+                <h2 className="text-2xl font-bold text-slate-900 mb-1">Reset Password</h2>
+                <p className="text-slate-500 text-sm mb-6">Enter your email and we'll send you a reset link.</p>
+                <form onSubmit={handleForgotPassword} className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Company Name</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
                     <input
-                      type="text"
+                      type="email"
                       required
-                      value={form.companyName}
-                      onChange={(e) => setForm({ ...form, companyName: e.target.value })}
-                      placeholder="Acme Construction"
-                      className="w-full px-4 py-2.5 rounded-lg border border-slate-200 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-slate-50 placeholder:text-slate-400"
+                      value={resetEmail}
+                      onChange={(e) => setResetEmail(e.target.value)}
+                      placeholder="you@company.com"
+                      className="w-full px-4 py-2.5 rounded-lg border border-slate-200 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 placeholder:text-slate-400"
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Your Name</label>
-                    <input
-                      type="text"
-                      required
-                      value={form.name}
-                      onChange={(e) => setForm({ ...form, name: e.target.value })}
-                      placeholder="John Doe"
-                      className="w-full px-4 py-2.5 rounded-lg border border-slate-200 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-slate-50 placeholder:text-slate-400"
-                    />
-                  </div>
-                </>
-              )}
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
-                <input
-                  type="email"
-                  required
-                  value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  placeholder="you@company.com"
-                  className="w-full px-4 py-2.5 rounded-lg border border-slate-200 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-slate-50 placeholder:text-slate-400"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
-                <div className="relative">
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    required
-                    minLength={8}
-                    value={form.password}
-                    onChange={(e) => setForm({ ...form, password: e.target.value })}
-                    placeholder="••••••••"
-                    className="w-full px-4 py-2.5 rounded-lg border border-slate-200 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-slate-50 pr-10 placeholder:text-slate-400"
-                  />
                   <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    type="submit"
+                    disabled={loading}
+                    className="w-full py-2.5 rounded-lg text-white font-semibold text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-60 cursor-pointer hover:shadow-lg"
+                    style={{ background: 'linear-gradient(135deg, #2563eb, #1d4ed8)' }}
                   >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Mail className="w-4 h-4" /> Send Reset Link</>}
+                  </button>
+                </form>
+              </div>
+            ) : (
+              /* ─── Login / Register Form ─── */
+              <>
+                <h2 className="text-2xl font-bold text-slate-900 mb-1">
+                  {isLogin ? 'Welcome back' : 'Create your account'}
+                </h2>
+                <p className="text-slate-500 mb-6 text-sm">
+                  {isLogin ? 'Sign in to your dashboard' : 'Start your 14-day free trial'}
+                </p>
+
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  {!isLogin && (
+                    <>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Company Name</label>
+                        <input
+                          type="text"
+                          required
+                          value={form.companyName}
+                          onChange={(e) => setForm({ ...form, companyName: e.target.value })}
+                          placeholder="Acme Construction"
+                          className="w-full px-4 py-2.5 rounded-lg border border-slate-200 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-slate-50 placeholder:text-slate-400"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Your Name</label>
+                        <input
+                          type="text"
+                          required
+                          value={form.name}
+                          onChange={(e) => setForm({ ...form, name: e.target.value })}
+                          placeholder="John Doe"
+                          className="w-full px-4 py-2.5 rounded-lg border border-slate-200 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-slate-50 placeholder:text-slate-400"
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+                    <input
+                      type="email"
+                      required
+                      value={form.email}
+                      onChange={(e) => setForm({ ...form, email: e.target.value })}
+                      placeholder="you@company.com"
+                      className="w-full px-4 py-2.5 rounded-lg border border-slate-200 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-slate-50 placeholder:text-slate-400"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        required
+                        minLength={8}
+                        value={form.password}
+                        onChange={(e) => setForm({ ...form, password: e.target.value })}
+                        placeholder="••••••••"
+                        className="w-full px-4 py-2.5 rounded-lg border border-slate-200 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-slate-50 pr-10 placeholder:text-slate-400"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                      >
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                    {isLogin && (
+                      <div className="text-right mt-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setIsForgotPassword(true)}
+                          className="text-xs text-blue-600 hover:text-blue-700 font-medium cursor-pointer"
+                        >
+                          Forgot Password?
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full py-2.5 rounded-lg text-white font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-200 disabled:opacity-60 cursor-pointer hover:shadow-lg"
+                    style={{ background: 'linear-gradient(135deg, #2563eb, #1d4ed8)' }}
+                  >
+                    {loading ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <>
+                        {isLogin ? 'Sign In' : 'Create Account'}
+                        <ArrowRight className="w-4 h-4" />
+                      </>
+                    )}
+                  </button>
+                </form>
+
+                <div className="mt-6 text-center">
+                  <button
+                    onClick={() => setIsLogin(!isLogin)}
+                    className="text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors cursor-pointer"
+                  >
+                    {isLogin ? "Don't have an account? Start free trial" : 'Already have an account? Sign in'}
                   </button>
                 </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-2.5 rounded-lg text-white font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-200 disabled:opacity-60 cursor-pointer hover:shadow-lg"
-                style={{ background: 'linear-gradient(135deg, #2563eb, #1d4ed8)' }}
-              >
-                {loading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <>
-                    {isLogin ? 'Sign In' : 'Create Account'}
-                    <ArrowRight className="w-4 h-4" />
-                  </>
-                )}
-              </button>
-            </form>
-
-            <div className="mt-6 text-center">
-              <button
-                onClick={() => setIsLogin(!isLogin)}
-                className="text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors cursor-pointer"
-              >
-                {isLogin ? "Don't have an account? Start free trial" : 'Already have an account? Sign in'}
-              </button>
-            </div>
+              </>
+            )}
 
             <div className="mt-6 flex items-center justify-center gap-1.5 text-xs text-slate-400">
               <Shield className="w-3.5 h-3.5" />

@@ -1,4 +1,4 @@
-import { Controller, Get, Patch, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { CompaniesService } from './companies.service';
 import { UpdateCompanyDto } from './dto/update-company.dto';
@@ -6,8 +6,7 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { UserRole } from '../users/entities/user.entity';
-import { User } from '../users/entities/user.entity';
+import { UserRole, User } from '../users/entities/user.entity';
 
 @ApiTags('Companies')
 @ApiBearerAuth()
@@ -36,5 +35,31 @@ export class CompaniesController {
     @Body() dto: UpdateCompanyDto,
   ) {
     return this.companiesService.update(user.companyId, dto);
+  }
+
+  // ─── Multi-Company Endpoints ─────────────────────────
+
+  @Get('my-companies')
+  @ApiOperation({ summary: 'List all companies the user belongs to' })
+  async listMyCompanies(@CurrentUser() user: User) {
+    return this.companiesService.listUserCompanies(user.id);
+  }
+
+  @Post('switch')
+  @ApiOperation({ summary: 'Switch active company' })
+  async switchCompany(
+    @CurrentUser() user: User,
+    @Body() body: { companyId: string },
+  ) {
+    return this.companiesService.switchCompany(user.id, body.companyId);
+  }
+
+  @Post()
+  @ApiOperation({ summary: 'Create a new company' })
+  async createCompany(
+    @CurrentUser() user: User,
+    @Body() body: { name: string },
+  ) {
+    return this.companiesService.createCompany(user.id, body);
   }
 }

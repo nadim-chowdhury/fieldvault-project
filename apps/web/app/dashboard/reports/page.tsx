@@ -108,7 +108,36 @@ export default function ReportsPage() {
               <p className="text-sm text-slate-500">Equipment grouped by category</p>
             </div>
           </div>
-          <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-50 text-blue-700 text-sm font-medium hover:bg-blue-100 transition-colors cursor-pointer">
+          <button
+            onClick={() => {
+              if (!inventoryData?.byCategory) return;
+              const rows: string[] = ['Name,Serial Number,Category,Status,Purchase Value,Last Inspected,Manufacturer'];
+              Object.entries(inventoryData.byCategory).forEach(([category, assets]: [string, any]) => {
+                (assets as any[]).forEach((a: any) => {
+                  rows.push([
+                    `"${a.name || ''}"`,
+                    `"${a.serialNumber || ''}"`,
+                    category.replace('_', ' '),
+                    a.status?.replace('_', ' ') || '',
+                    a.purchaseValue ? String(a.purchaseValue) : '',
+                    a.lastInspectedAt ? new Date(a.lastInspectedAt).toLocaleDateString() : '',
+                    `"${a.manufacturer || ''}"`,
+                  ].join(','));
+                });
+              });
+              const csv = rows.join('\n');
+              const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+              const url = window.URL.createObjectURL(blob);
+              const link = document.createElement('a');
+              link.href = url;
+              link.download = `fieldvault-inventory-${new Date().toISOString().split('T')[0]}.csv`;
+              link.click();
+              window.URL.revokeObjectURL(url);
+              toast.success('CSV exported successfully!');
+            }}
+            disabled={inventoryLoading || !inventoryData?.byCategory}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-50 text-blue-700 text-sm font-medium hover:bg-blue-100 transition-colors cursor-pointer disabled:opacity-50"
+          >
             <Download className="w-4 h-4" />
             Export CSV
           </button>

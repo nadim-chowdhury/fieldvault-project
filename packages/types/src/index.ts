@@ -53,6 +53,12 @@ export enum CompanyPlan {
   ENTERPRISE = 'enterprise',
 }
 
+export enum MembershipRole {
+  ADMIN = 'admin',
+  SUPERVISOR = 'supervisor',
+  WORKER = 'worker',
+}
+
 // ─── Interfaces ────────────────────────────────────────────────────
 
 export interface Company {
@@ -209,8 +215,20 @@ export interface AuthTokens {
   refreshToken: string;
 }
 
+export interface CompanyWithMembership extends Company {
+  membershipRole: MembershipRole;
+  isDefault: boolean;
+}
+
 export interface LoginResponse {
   tokens: AuthTokens;
   user: User;
   company: Company;
+  companies: Company[];
+}
+
+export interface SwitchCompanyResponse {
+  tokens: AuthTokens;
+  company: Company;
+  user: User;
 }

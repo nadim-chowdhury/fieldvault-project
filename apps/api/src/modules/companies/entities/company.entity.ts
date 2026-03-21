@@ -10,6 +10,7 @@ import { User } from '../../users/entities/user.entity';
 import { Asset } from '../../assets/entities/asset.entity';
 import { Site } from '../../sites/entities/site.entity';
 import { ApiKey } from '../../api-keys/entities/api-key.entity';
+import { CompanyMembership } from './company-membership.entity';
 
 export enum CompanyPlan {
   STARTER = 'starter',
@@ -70,4 +71,7 @@ export class Company {
 
   @OneToMany(() => ApiKey, (apiKey) => apiKey.company)
   apiKeys: ApiKey[];
+
+  @OneToMany(() => CompanyMembership, (membership) => membership.company)
+  memberships: CompanyMembership[];
 }
