@@ -235,7 +235,7 @@ export default function MaintenancePage() {
                   className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm bg-white"
                 >
                   <option value="">Select an asset...</option>
-                  {(assetsData?.data || assetsData || []).map((asset: any) => (
+                  {(Array.isArray(assetsData) ? assetsData : []).map((asset: any) => (
                     <option key={asset.id} value={asset.id}>
                       {asset.name} — {asset.serialNumber}
                     </option>

@@ -68,7 +68,7 @@ export default function SettingsPage() {
   };
 
   const company = companyData || storeCompany;
-  const plan = planBadges[company?.plan] || planBadges.starter;
+  const plan = (company?.plan && planBadges[company.plan as string]) || planBadges.starter;
 
   if (isLoading) {
     return (

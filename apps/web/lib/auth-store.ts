@@ -6,7 +6,7 @@ interface User {
   email: string;
   role: string;
   companyId: string;
-  avatarUrl?: string;
+  avatarUrl?: string | null;
 }
 
 interface Company {
@@ -15,6 +15,8 @@ interface Company {
   slug: string;
   plan: string;
   isActive: boolean;
+  trialEndsAt?: string | null;
+  createdAt?: string;
 }
 
 interface AuthState {
