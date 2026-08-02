@@ -1,0 +1,124 @@
+import { MigrationInterface, QueryRunner } from "typeorm";
+
+export class Migration1785658430681 implements MigrationInterface {
+    name = 'Migration1785658430681'
+
+    public async up(queryRunner: QueryRunner): Promise<void> {
+        await queryRunner.query(`CREATE TABLE "assignments" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "asset_id" uuid NOT NULL, "user_id" uuid NOT NULL, "company_id" character varying NOT NULL, "site_location" character varying(200) NOT NULL, "checked_out_at" TIMESTAMP WITH TIME ZONE NOT NULL, "checked_in_at" TIMESTAMP WITH TIME ZONE, "condition_on_checkout" character varying(500), "condition_on_return" character varying(500), "photo_on_return" character varying, "notes" text, "is_overdue" boolean NOT NULL DEFAULT false, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "PK_c54ca359535e0012b04dcbd80ee" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE INDEX "IDX_4732f64f645b0f3e22537b1ac6" ON "assignments" ("company_id", "checked_in_at") `);
+        await queryRunner.query(`CREATE INDEX "IDX_3300c863bec1fe9005fbc22cb4" ON "assignments" ("company_id") `);
+        await queryRunner.query(`CREATE TYPE "public"."maintenance_logs_type_enum" AS ENUM('routine_service', 'safety_inspection', 'repair', 'calibration', 'certification')`);
+        await queryRunner.query(`CREATE TYPE "public"."maintenance_logs_status_enum" AS ENUM('scheduled', 'in_progress', 'completed', 'overdue', 'cancelled')`);
+        await queryRunner.query(`CREATE TABLE "maintenance_logs" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "asset_id" uuid NOT NULL, "company_id" character varying NOT NULL, "type" "public"."maintenance_logs_type_enum" NOT NULL, "status" "public"."maintenance_logs_status_enum" NOT NULL DEFAULT 'scheduled', "scheduled_date" date NOT NULL, "completed_at" TIMESTAMP WITH TIME ZONE, "performed_by" character varying(100), "cost" numeric(10,2), "description" text, "technician_notes" text, "invoice_url" character varying, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "PK_096e4b6bb7c9fe74d960e7523e4" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE INDEX "IDX_26423f112d9b800bc558530925" ON "maintenance_logs" ("company_id", "scheduled_date") `);
+        await queryRunner.query(`CREATE INDEX "IDX_ae7c60f9b551bdfb25374c8763" ON "maintenance_logs" ("company_id") `);
+        await queryRunner.query(`CREATE TABLE "sites" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "company_id" uuid NOT NULL, "name" character varying(150) NOT NULL, "address" character varying(500), "is_active" boolean NOT NULL DEFAULT true, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "PK_4f5eccb1dfde10c9170502595a7" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE INDEX "IDX_d1a96b77bb904acd03988687af" ON "sites" ("company_id") `);
+        await queryRunner.query(`CREATE TYPE "public"."documents_type_enum" AS ENUM('insurance', 'certificate', 'manual', 'other')`);
+        await queryRunner.query(`CREATE TABLE "documents" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "company_id" uuid NOT NULL, "asset_id" uuid NOT NULL, "name" character varying(200) NOT NULL, "type" "public"."documents_type_enum" NOT NULL DEFAULT 'other', "file_url" character varying(500) NOT NULL, "expires_at" date, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "PK_ac51aa5181ee2036f5ca482857c" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE INDEX "IDX_7eef6f614e164f5733c4239657" ON "documents" ("asset_id") `);
+        await queryRunner.query(`CREATE INDEX "IDX_7f9de69b9f75391dc280dd640f" ON "documents" ("company_id") `);
+        await queryRunner.query(`CREATE TYPE "public"."assets_category_enum" AS ENUM('power_tool', 'heavy_equipment', 'hand_tool', 'safety_gear', 'measuring', 'vehicle')`);
+        await queryRunner.query(`CREATE TYPE "public"."assets_status_enum" AS ENUM('available', 'in_use', 'maintenance', 'lost')`);
+        await queryRunner.query(`CREATE TABLE "assets" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "company_id" uuid NOT NULL, "site_id" uuid, "name" character varying(200) NOT NULL, "serial_number" character varying(100) NOT NULL, "model" character varying(100), "manufacturer" character varying(100), "category" "public"."assets_category_enum" NOT NULL, "status" "public"."assets_status_enum" NOT NULL DEFAULT 'available', "qr_code_url" character varying, "photo_url" character varying, "purchase_value" numeric(10,2), "purchase_date" date, "warranty_expires_at" date, "last_inspected_at" TIMESTAMP WITH TIME ZONE, "next_maintenance_date" date, "maintenance_interval_days" integer, "notes" text, "is_archived" boolean NOT NULL DEFAULT false, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "UQ_9da03d06e2af9f607159e884269" UNIQUE ("serial_number"), CONSTRAINT "PK_da96729a8b113377cfb6a62439c" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE INDEX "IDX_6209aa2278d58c0dfb2d908a76" ON "assets" ("company_id", "status") `);
+        await queryRunner.query(`CREATE INDEX "IDX_77e61fc9e3c748b017578d1c6c" ON "assets" ("company_id") `);
+        await queryRunner.query(`CREATE TABLE "api_keys" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "name" character varying(100) NOT NULL, "token" character varying(255) NOT NULL, "company_id" uuid NOT NULL, "created_by_id" uuid NOT NULL, "last_used_at" TIMESTAMP WITH TIME ZONE, "expires_at" TIMESTAMP WITH TIME ZONE, "is_active" boolean NOT NULL DEFAULT true, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "UQ_1bd9fe7915d60a91be22db2b9c0" UNIQUE ("token"), CONSTRAINT "PK_5c8a79801b44bd27b79228e1dad" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE UNIQUE INDEX "IDX_1bd9fe7915d60a91be22db2b9c" ON "api_keys" ("token") `);
+        await queryRunner.query(`CREATE TYPE "public"."company_memberships_role_enum" AS ENUM('admin', 'supervisor', 'worker')`);
+        await queryRunner.query(`CREATE TABLE "company_memberships" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "user_id" uuid NOT NULL, "company_id" uuid NOT NULL, "role" "public"."company_memberships_role_enum" NOT NULL DEFAULT 'worker', "is_default" boolean NOT NULL DEFAULT false, "joined_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "UQ_3e3b576111cb4e515fe08209398" UNIQUE ("user_id", "company_id"), CONSTRAINT "PK_be83f1da23cb0c28ab4adfedf73" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE INDEX "IDX_cac5f26a37bd186d65b85b722e" ON "company_memberships" ("company_id") `);
+        await queryRunner.query(`CREATE INDEX "IDX_e7a4d43c675e7d8691e8ea0b65" ON "company_memberships" ("user_id") `);
+        await queryRunner.query(`CREATE TYPE "public"."companies_plan_enum" AS ENUM('starter', 'pro', 'enterprise')`);
+        await queryRunner.query(`CREATE TABLE "companies" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "name" character varying(100) NOT NULL, "slug" character varying(100) NOT NULL, "logo_url" character varying, "phone" character varying(20), "address" character varying(500), "country" character varying(100), "timezone" character varying(50) NOT NULL DEFAULT 'UTC', "plan" "public"."companies_plan_enum" NOT NULL DEFAULT 'starter', "is_active" boolean NOT NULL DEFAULT true, "trial_ends_at" TIMESTAMP WITH TIME ZONE, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "UQ_b28b07d25e4324eee577de5496d" UNIQUE ("slug"), CONSTRAINT "PK_d4bc3e82a314fa9e29f652c2c22" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TYPE "public"."users_role_enum" AS ENUM('admin', 'supervisor', 'worker')`);
+        await queryRunner.query(`CREATE TABLE "users" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "name" character varying(100) NOT NULL, "email" character varying(255) NOT NULL, "phone" character varying(20), "password_hash" character varying NOT NULL, "role" "public"."users_role_enum" NOT NULL DEFAULT 'worker', "company_id" uuid NOT NULL, "avatar_url" character varying, "is_active" boolean NOT NULL DEFAULT true, "invited_by" uuid, "refresh_token_hash" character varying, "last_login_at" TIMESTAMP WITH TIME ZONE, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "UQ_97672ac88f789774dd47f7c8be3" UNIQUE ("email"), CONSTRAINT "PK_a3ffb1c0c8416b9fc6f907b7433" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE INDEX "IDX_97672ac88f789774dd47f7c8be" ON "users" ("email") `);
+        await queryRunner.query(`CREATE INDEX "IDX_7ae6334059289559722437bcc1" ON "users" ("company_id") `);
+        await queryRunner.query(`CREATE TYPE "public"."payments_provider_enum" AS ENUM('bkash', 'nagad', 'stripe')`);
+        await queryRunner.query(`CREATE TYPE "public"."payments_status_enum" AS ENUM('pending', 'completed', 'failed', 'refunded')`);
+        await queryRunner.query(`CREATE TABLE "payments" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "company_id" uuid NOT NULL, "amount" numeric(10,2) NOT NULL, "currency" character varying(10) NOT NULL DEFAULT 'BDT', "provider" "public"."payments_provider_enum" NOT NULL, "transaction_id" character varying(100), "status" "public"."payments_status_enum" NOT NULL DEFAULT 'pending', "metadata" jsonb, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "UQ_3c324ca49dabde7ffc0ef64675d" UNIQUE ("transaction_id"), CONSTRAINT "PK_197ab7af18c93fbb0c9b28b4a59" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE INDEX "IDX_3c324ca49dabde7ffc0ef64675" ON "payments" ("transaction_id") `);
+        await queryRunner.query(`CREATE INDEX "IDX_4781cf05f36ba314cdd314c0c6" ON "payments" ("company_id") `);
+        await queryRunner.query(`CREATE TYPE "public"."notifications_type_enum" AS ENUM('maintenance_due', 'maintenance_overdue', 'tool_overdue', 'tool_damaged', 'user_invited', 'report_ready')`);
+        await queryRunner.query(`CREATE TABLE "notifications" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "company_id" character varying NOT NULL, "user_id" uuid, "type" "public"."notifications_type_enum" NOT NULL, "title" character varying(200) NOT NULL, "message" text NOT NULL, "related_entity_id" uuid, "related_entity_type" character varying(50), "is_read" boolean NOT NULL DEFAULT false, "email_sent" boolean NOT NULL DEFAULT false, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "PK_6a72c3c0f683f6462415e653c3a" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TYPE "public"."audit_logs_action_enum" AS ENUM('CREATE', 'UPDATE', 'DELETE')`);
+        await queryRunner.query(`CREATE TABLE "audit_logs" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "company_id" uuid, "user_id" uuid, "entity_name" character varying(100) NOT NULL, "entity_id" uuid NOT NULL, "action" "public"."audit_logs_action_enum" NOT NULL, "old_data" jsonb, "new_data" jsonb, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "PK_1bb179d048bbc581caa3b013439" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE INDEX "IDX_50d854b973295d7c51bcf346ef" ON "audit_logs" ("company_id") `);
+        await queryRunner.query(`CREATE INDEX "IDX_9ac4b82f0b0f68801024154d19" ON "audit_logs" ("entity_name", "entity_id") `);
+        await queryRunner.query(`ALTER TABLE "assignments" ADD CONSTRAINT "FK_f38629a3327e8b7033ca15a6a0c" FOREIGN KEY ("asset_id") REFERENCES "assets"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "assignments" ADD CONSTRAINT "FK_3e96b2dc80534b727b58b87b85f" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "maintenance_logs" ADD CONSTRAINT "FK_58fd098e2d585411d4b1dee7406" FOREIGN KEY ("asset_id") REFERENCES "assets"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "sites" ADD CONSTRAINT "FK_d1a96b77bb904acd03988687af4" FOREIGN KEY ("company_id") REFERENCES "companies"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "documents" ADD CONSTRAINT "FK_7f9de69b9f75391dc280dd640fc" FOREIGN KEY ("company_id") REFERENCES "companies"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "documents" ADD CONSTRAINT "FK_7eef6f614e164f5733c42396573" FOREIGN KEY ("asset_id") REFERENCES "assets"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "assets" ADD CONSTRAINT "FK_77e61fc9e3c748b017578d1c6cb" FOREIGN KEY ("company_id") REFERENCES "companies"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "assets" ADD CONSTRAINT "FK_87fe53e206454bc6d9b3348621a" FOREIGN KEY ("site_id") REFERENCES "sites"("id") ON DELETE SET NULL ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "api_keys" ADD CONSTRAINT "FK_8396859f08e7ad26726c9b3860e" FOREIGN KEY ("company_id") REFERENCES "companies"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "api_keys" ADD CONSTRAINT "FK_3afd227c6cb003779abe2a88b4e" FOREIGN KEY ("created_by_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "company_memberships" ADD CONSTRAINT "FK_e7a4d43c675e7d8691e8ea0b657" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "company_memberships" ADD CONSTRAINT "FK_cac5f26a37bd186d65b85b722ef" FOREIGN KEY ("company_id") REFERENCES "companies"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "users" ADD CONSTRAINT "FK_7ae6334059289559722437bcc1c" FOREIGN KEY ("company_id") REFERENCES "companies"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "payments" ADD CONSTRAINT "FK_4781cf05f36ba314cdd314c0c66" FOREIGN KEY ("company_id") REFERENCES "companies"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+    }
+
+    public async down(queryRunner: QueryRunner): Promise<void> {
+        await queryRunner.query(`ALTER TABLE "payments" DROP CONSTRAINT "FK_4781cf05f36ba314cdd314c0c66"`);
+        await queryRunner.query(`ALTER TABLE "users" DROP CONSTRAINT "FK_7ae6334059289559722437bcc1c"`);
+        await queryRunner.query(`ALTER TABLE "company_memberships" DROP CONSTRAINT "FK_cac5f26a37bd186d65b85b722ef"`);
+        await queryRunner.query(`ALTER TABLE "company_memberships" DROP CONSTRAINT "FK_e7a4d43c675e7d8691e8ea0b657"`);
+        await queryRunner.query(`ALTER TABLE "api_keys" DROP CONSTRAINT "FK_3afd227c6cb003779abe2a88b4e"`);
+        await queryRunner.query(`ALTER TABLE "api_keys" DROP CONSTRAINT "FK_8396859f08e7ad26726c9b3860e"`);
+        await queryRunner.query(`ALTER TABLE "assets" DROP CONSTRAINT "FK_87fe53e206454bc6d9b3348621a"`);
+        await queryRunner.query(`ALTER TABLE "assets" DROP CONSTRAINT "FK_77e61fc9e3c748b017578d1c6cb"`);
+        await queryRunner.query(`ALTER TABLE "documents" DROP CONSTRAINT "FK_7eef6f614e164f5733c42396573"`);
+        await queryRunner.query(`ALTER TABLE "documents" DROP CONSTRAINT "FK_7f9de69b9f75391dc280dd640fc"`);
+        await queryRunner.query(`ALTER TABLE "sites" DROP CONSTRAINT "FK_d1a96b77bb904acd03988687af4"`);
+        await queryRunner.query(`ALTER TABLE "maintenance_logs" DROP CONSTRAINT "FK_58fd098e2d585411d4b1dee7406"`);
+        await queryRunner.query(`ALTER TABLE "assignments" DROP CONSTRAINT "FK_3e96b2dc80534b727b58b87b85f"`);
+        await queryRunner.query(`ALTER TABLE "assignments" DROP CONSTRAINT "FK_f38629a3327e8b7033ca15a6a0c"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_9ac4b82f0b0f68801024154d19"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_50d854b973295d7c51bcf346ef"`);
+        await queryRunner.query(`DROP TABLE "audit_logs"`);
+        await queryRunner.query(`DROP TYPE "public"."audit_logs_action_enum"`);
+        await queryRunner.query(`DROP TABLE "notifications"`);
+        await queryRunner.query(`DROP TYPE "public"."notifications_type_enum"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_4781cf05f36ba314cdd314c0c6"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_3c324ca49dabde7ffc0ef64675"`);
+        await queryRunner.query(`DROP TABLE "payments"`);
+        await queryRunner.query(`DROP TYPE "public"."payments_status_enum"`);
+        await queryRunner.query(`DROP TYPE "public"."payments_provider_enum"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_7ae6334059289559722437bcc1"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_97672ac88f789774dd47f7c8be"`);
+        await queryRunner.query(`DROP TABLE "users"`);
+        await queryRunner.query(`DROP TYPE "public"."users_role_enum"`);
+        await queryRunner.query(`DROP TABLE "companies"`);
+        await queryRunner.query(`DROP TYPE "public"."companies_plan_enum"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_e7a4d43c675e7d8691e8ea0b65"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_cac5f26a37bd186d65b85b722e"`);
+        await queryRunner.query(`DROP TABLE "company_memberships"`);
+        await queryRunner.query(`DROP TYPE "public"."company_memberships_role_enum"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_1bd9fe7915d60a91be22db2b9c"`);
+        await queryRunner.query(`DROP TABLE "api_keys"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_77e61fc9e3c748b017578d1c6c"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_6209aa2278d58c0dfb2d908a76"`);
+        await queryRunner.query(`DROP TABLE "assets"`);
+        await queryRunner.query(`DROP TYPE "public"."assets_status_enum"`);
+        await queryRunner.query(`DROP TYPE "public"."assets_category_enum"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_7f9de69b9f75391dc280dd640f"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_7eef6f614e164f5733c4239657"`);
+        await queryRunner.query(`DROP TABLE "documents"`);
+        await queryRunner.query(`DROP TYPE "public"."documents_type_enum"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_d1a96b77bb904acd03988687af"`);
+        await queryRunner.query(`DROP TABLE "sites"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_ae7c60f9b551bdfb25374c8763"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_26423f112d9b800bc558530925"`);
+        await queryRunner.query(`DROP TABLE "maintenance_logs"`);
+        await queryRunner.query(`DROP TYPE "public"."maintenance_logs_status_enum"`);
+        await queryRunner.query(`DROP TYPE "public"."maintenance_logs_type_enum"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_3300c863bec1fe9005fbc22cb4"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_4732f64f645b0f3e22537b1ac6"`);
+        await queryRunner.query(`DROP TABLE "assignments"`);
+    }
+
+}

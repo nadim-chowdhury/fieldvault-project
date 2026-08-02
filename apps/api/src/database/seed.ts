@@ -1,10 +1,9 @@
 import { DataSource } from 'typeorm';
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const dotenv = require('dotenv');
+import * as dotenv from 'dotenv';
 import bcrypt from 'bcrypt';
 import { v4 as uuid } from 'uuid';
 
-dotenv.config({ path: '../../.env' });
+dotenv.config();
 
 // ─── Seed data ─────────────────────────────────────────────────────
 const COMPANY_ID = uuid();
@@ -32,10 +31,10 @@ async function seed() {
   try {
     // ─── Company ────────────────────────────────────
     await qr.query(
-      `INSERT INTO companies (id, name, plan, "maxAssets", "maxUsers", phone, address, country, timezone, "createdAt", "updatedAt")
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
+      `INSERT INTO companies (id, name, slug, plan, phone, address, country, timezone, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
        ON CONFLICT (id) DO NOTHING`,
-      [COMPANY_ID, 'Acme Construction Ltd', 'professional', 500, 25,
+      [COMPANY_ID, 'Acme Construction Ltd', 'acme-construction', 'pro',
         '+1-555-0100', '123 Builder Ave, Suite 200', 'US', 'America/New_York'],
     );
     console.log('✅ Company created');
@@ -51,7 +50,7 @@ async function seed() {
 
     for (const [id, name, email, role] of users) {
       await qr.query(
-        `INSERT INTO users (id, name, email, "passwordHash", role, "companyId", "isActive", "createdAt", "updatedAt")
+        `INSERT INTO users (id, name, email, password_hash, role, company_id, is_active, created_at, updated_at)
          VALUES ($1, $2, $3, $4, $5, $6, true, NOW(), NOW())
          ON CONFLICT (id) DO NOTHING`,
         [id, name, email, password, role, COMPANY_ID],
@@ -79,9 +78,9 @@ async function seed() {
     for (let i = 0; i < assets.length; i++) {
       const [name, serial, category, manufacturer, model, value] = assets[i];
       await qr.query(
-        `INSERT INTO assets (id, name, "serialNumber", category, manufacturer, model, status,
-          "purchaseValue", "purchaseDate", "maintenanceIntervalDays", "companyId",
-          "isArchived", "createdAt", "updatedAt")
+        `INSERT INTO assets (id, name, serial_number, category, manufacturer, model, status,
+          purchase_value, purchase_date, maintenance_interval_days, company_id,
+          is_archived, created_at, updated_at)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW() - interval '180 days', $9, $10, false, NOW(), NOW())
          ON CONFLICT (id) DO NOTHING`,
         [ASSET_IDS[i], name, serial, category, manufacturer, model, statuses[i],
@@ -95,8 +94,8 @@ async function seed() {
     for (let i = 0; i < 5; i++) {
       const daysOffset = (i - 2) * 15; // Some past, some future
       await qr.query(
-        `INSERT INTO maintenance_logs (id, "assetId", "companyId", type, status,
-          "scheduledDate", description, "createdAt", "updatedAt")
+        `INSERT INTO maintenance_logs (id, asset_id, company_id, type, status,
+          scheduled_date, description, created_at, updated_at)
          VALUES ($1, $2, $3, $4, $5, NOW() + interval '${daysOffset} days', $6, NOW(), NOW())
          ON CONFLICT (id) DO NOTHING`,
         [uuid(), ASSET_IDS[i % assets.length], COMPANY_ID,
@@ -109,15 +108,15 @@ async function seed() {
 
     // ─── Assignments ────────────────────────────────
     await qr.query(
-      `INSERT INTO assignments (id, "assetId", "userId", "companyId", "siteLocation",
-        "checkedOutAt", "createdAt", "updatedAt")
+      `INSERT INTO assignments (id, asset_id, user_id, company_id, site_location,
+        checked_out_at, created_at, updated_at)
        VALUES ($1, $2, $3, $4, $5, NOW() - interval '2 days', NOW(), NOW())
        ON CONFLICT (id) DO NOTHING`,
       [uuid(), ASSET_IDS[2], WORKER_ID, COMPANY_ID, 'Downtown Tower - Floor 14'],
     );
     await qr.query(
-      `INSERT INTO assignments (id, "assetId", "userId", "companyId", "siteLocation",
-        "checkedOutAt", "createdAt", "updatedAt")
+      `INSERT INTO assignments (id, asset_id, user_id, company_id, site_location,
+        checked_out_at, created_at, updated_at)
        VALUES ($1, $2, $3, $4, $5, NOW() - interval '5 days', NOW(), NOW())
        ON CONFLICT (id) DO NOTHING`,
       [uuid(), ASSET_IDS[7], SUPERVISOR_ID, COMPANY_ID, 'Highway 101 Bridge - Section B'],
@@ -126,9 +125,9 @@ async function seed() {
 
     // ─── Notifications ──────────────────────────────
     await qr.query(
-      `INSERT INTO notifications (id, "userId", "companyId", type, title, message,
-        "isRead", "createdAt", "updatedAt")
-       VALUES ($1, $2, $3, $4, $5, $6, false, NOW(), NOW())
+      `INSERT INTO notifications (id, user_id, company_id, type, title, message,
+        is_read, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, false, NOW())
        ON CONFLICT (id) DO NOTHING`,
       [uuid(), ADMIN_ID, COMPANY_ID, 'maintenance_due',
         'Maintenance due: CAT 320 Excavator',

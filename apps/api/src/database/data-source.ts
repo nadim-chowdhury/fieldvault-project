@@ -1,7 +1,7 @@
 import { DataSource } from 'typeorm';
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-require('dotenv').config({ path: '../../.env' });
+import * as dotenv from 'dotenv';
+dotenv.config();
 
 /**
  * TypeORM CLI data source for migration generation & running.
@@ -14,8 +14,8 @@ require('dotenv').config({ path: '../../.env' });
 export default new DataSource({
   type: 'postgres',
   url: process.env.DATABASE_URL,
-  entities: [__dirname + '/../**/*.entity{.ts,.js}'],
-  migrations: [__dirname + '/migrations/**/*{.ts,.js}'],
+  entities: [__dirname + '/../**/*.entity{.ts,.js}', 'dist/**/*.entity.js', 'src/**/*.entity.ts'],
+  migrations: [__dirname + '/migrations/*{.ts,.js}', 'dist/database/migrations/*.js', 'src/database/migrations/*.ts'],
   synchronize: false,
   logging: true,
 });

@@ -28,8 +28,6 @@ docs
 # Tests
 **/coverage
 **/__tests__
-**/*.spec.ts
-**/*.test.ts
 **/playwright-report
 
 # IDE
