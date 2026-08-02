@@ -3,7 +3,6 @@
 # =============================================================================
 FROM node:20-alpine AS builder
 
-RUN apk add --no-cache libc6-compat python3 make g++
 RUN npm install -g pnpm@9
 
 WORKDIR /app
@@ -20,9 +19,7 @@ RUN pnpm install --frozen-lockfile
 RUN pnpm --filter types build
 RUN pnpm --filter validators build
 RUN pnpm --filter constants build
-WORKDIR /app/apps/api
-RUN pnpm run build
-WORKDIR /app
+RUN pnpm --filter api build
 
 
 # =============================================================================
@@ -55,8 +52,9 @@ WORKDIR /app
 # Copy built artifacts and node_modules from builder stage
 COPY --from=builder --chown=nestjs:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nestjs:nodejs /app/packages ./packages
-COPY --from=builder --chown=nestjs:nodejs /app/apps/api/package.json ./apps/api/package.json
-COPY --from=builder --chown=nestjs:nodejs /app/apps/api/dist ./apps/api/dist
+COPY --from=builder --chown=nestjs:nodejs /app/apps/api ./apps/api
+
+WORKDIR /app/apps/api
 
 USER nestjs
 
@@ -68,4 +66,4 @@ ENV PORT=3001
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
     CMD wget -qO- http://localhost:3001/api/health || exit 1
 
-CMD ["node", "apps/api/dist/main.js"]
+CMD ["node", "dist/main.js"]

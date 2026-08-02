@@ -3,10 +3,11 @@ node_modules
 **/node_modules
 
 # Build outputs
-**/dist
 **/.next
 **/build
 **/web-build
+*.tsbuildinfo
+**/*.tsbuildinfo
 
 # Expo / Mobile (never dockerized)
 apps/mobile
